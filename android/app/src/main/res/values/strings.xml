@@ -1,0 +1,7 @@
+<?xml version='1.0' encoding='utf-8'?>
+<resources>
+    <string name="app_name">เช็คตังค์</string>
+    <string name="title_activity_main">เช็คตังค์</string>
+    <string name="package_name">com.bank.checktang</string>
+    <string name="custom_url_scheme">com.bank.checktang</string>
+</resources>
