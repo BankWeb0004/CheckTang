@@ -1,26 +1,125 @@
 import { createFileRoute } from "@tanstack/react-router";
+import { useState } from "react";
+import { ExpenseProvider, useStore } from "@/lib/expense-store";
+import { Dashboard } from "@/components/expense/Dashboard";
+import { History } from "@/components/expense/History";
+import { Settings } from "@/components/expense/Settings";
+import { AddTransactionSheet } from "@/components/expense/AddTransactionSheet";
+import { Toaster } from "@/components/ui/sonner";
+import { Home, ClipboardList, Settings as SettingsIcon, Plus } from "lucide-react";
 
 export const Route = createFileRoute("/")({
+  head: () => ({
+    meta: [
+      { title: "Mindful Spend — Minimal Expense Tracker" },
+      {
+        name: "description",
+        content:
+          "A calm, minimalist expense tracker with custom themes, wallpapers, and Thai/English support. Your data stays on your device.",
+      },
+      { property: "og:title", content: "Mindful Spend — Minimal Expense Tracker" },
+      {
+        property: "og:description",
+        content: "Track income & expenses with a soft, distraction-free interface.",
+      },
+    ],
+  }),
   component: Index,
 });
 
-// IMPORTANT: Replace this placeholder. For sites with multiple pages (About, Services, Contact, etc.),
-// create separate route files (about.tsx, services.tsx, contact.tsx) — don't put all pages in this file.
-function PlaceholderIndex() {
+type Tab = "dashboard" | "history" | "settings";
+
+function AppShell() {
+  const { t, wallpaper } = useStore();
+  const [tab, setTab] = useState<Tab>("dashboard");
+  const [addOpen, setAddOpen] = useState(false);
+
+  const tabs: { id: Tab; label: string; icon: typeof Home }[] = [
+    { id: "dashboard", label: t.dashboard, icon: Home },
+    { id: "history", label: t.history, icon: ClipboardList },
+    { id: "settings", label: t.settings, icon: SettingsIcon },
+  ];
+
   return (
     <div
-      className="flex min-h-screen items-center justify-center"
-      style={{ backgroundColor: "#fcfbf8" }}
+      className="min-h-screen relative"
+      style={
+        wallpaper
+          ? {
+              backgroundImage: `url(${wallpaper})`,
+              backgroundSize: "cover",
+              backgroundPosition: "center",
+              backgroundAttachment: "fixed",
+            }
+          : undefined
+      }
     >
-      <img
-        data-lovable-blank-page-placeholder="REMOVE_THIS"
-        src="https://cdn.gpteng.co/blank-app-v1.svg"
-        alt="Your app will live here!"
-      />
+      {wallpaper && <div className="fixed inset-0 wallpaper-overlay pointer-events-none" />}
+
+      <div className="relative max-w-md mx-auto px-5 pt-8 pb-32">
+        <header className="mb-6 flex items-center justify-between">
+          <div>
+            <h1 className="text-xl font-semibold tracking-tight">{t.appName}</h1>
+            <p className="text-xs text-muted-foreground mt-0.5">
+              {tab === "dashboard" && t.thisMonth}
+              {tab === "history" && t.recent}
+              {tab === "settings" && t.settings}
+            </p>
+          </div>
+        </header>
+
+        <main>
+          {tab === "dashboard" && <Dashboard />}
+          {tab === "history" && <History />}
+          {tab === "settings" && <Settings />}
+        </main>
+      </div>
+
+      {tab !== "settings" && (
+        <button
+          onClick={() => setAddOpen(true)}
+          aria-label={t.add}
+          className="fixed bottom-24 left-1/2 -translate-x-1/2 z-30 h-14 w-14 rounded-full bg-primary text-primary-foreground shadow-lg hover:scale-105 active:scale-95 transition-transform flex items-center justify-center"
+          style={{ boxShadow: "0 10px 28px -8px color-mix(in oklab, var(--primary) 50%, transparent)" }}
+        >
+          <Plus className="h-6 w-6" />
+        </button>
+      )}
+
+      <nav className="fixed bottom-0 left-0 right-0 z-20">
+        <div
+          className="max-w-md mx-auto m-3 rounded-2xl border border-border bg-card/90 backdrop-blur-md grid grid-cols-3"
+          style={{ boxShadow: "0 8px 24px -10px rgba(0,0,0,0.12)" }}
+        >
+          {tabs.map(({ id, label, icon: Icon }) => {
+            const active = tab === id;
+            return (
+              <button
+                key={id}
+                onClick={() => setTab(id)}
+                className="flex flex-col items-center gap-1 py-3 text-xs transition-colors"
+                style={{
+                  color: active ? "var(--primary)" : "var(--muted-foreground)",
+                }}
+              >
+                <Icon className="h-5 w-5" />
+                <span className="font-medium">{label}</span>
+              </button>
+            );
+          })}
+        </div>
+      </nav>
+
+      <AddTransactionSheet open={addOpen} onOpenChange={setAddOpen} />
+      <Toaster />
     </div>
   );
 }
 
 function Index() {
-  return <PlaceholderIndex />;
+  return (
+    <ExpenseProvider>
+      <AppShell />
+    </ExpenseProvider>
+  );
 }
