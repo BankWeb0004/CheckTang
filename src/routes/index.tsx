@@ -6,21 +6,36 @@ import { History } from "@/components/expense/History";
 import { Settings } from "@/components/expense/Settings";
 import { AddTransactionSheet } from "@/components/expense/AddTransactionSheet";
 import { Toaster } from "@/components/ui/sonner";
-import { Home, ClipboardList, Settings as SettingsIcon, Plus } from "lucide-react";
+import { Hop as Home, ClipboardList, Settings as SettingsIcon, Plus } from "lucide-react";
 
 export const Route = createFileRoute("/")({
   head: () => ({
     meta: [
-      { title: "Mindful Spend — Minimal Expense Tracker" },
+      { title: "เช็คตังค์ — CHECK TANG" },
       {
         name: "description",
         content:
-          "A calm, minimalist expense tracker with custom themes, wallpapers, and Thai/English support. Your data stays on your device.",
+          "เช็คตังค์ — แอปบันทึกรายรับ-รายจ่ายที่เรียบง่าย รองรับหลายสกุลเงิน ธีม และภาษาไทย/อังกฤษ",
       },
-      { property: "og:title", content: "Mindful Spend — Minimal Expense Tracker" },
+      { property: "og:title", content: "เช็คตังค์ — CHECK TANG" },
       {
         property: "og:description",
-        content: "Track income & expenses with a soft, distraction-free interface.",
+        content: "Track income & expenses with a clean, modern interface.",
+      },
+    ],
+    links: [
+      {
+        rel: "preconnect",
+        href: "https://fonts.googleapis.com",
+      },
+      {
+        rel: "preconnect",
+        href: "https://fonts.gstatic.com",
+        crossOrigin: "anonymous",
+      },
+      {
+        rel: "stylesheet",
+        href: "https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap",
       },
     ],
   }),
@@ -79,7 +94,7 @@ function AppShell() {
         <button
           onClick={() => setAddOpen(true)}
           aria-label={t.add}
-          className="fixed bottom-24 left-1/2 -translate-x-1/2 z-30 h-14 w-14 rounded-full bg-primary text-primary-foreground shadow-lg hover:scale-105 active:scale-95 transition-transform flex items-center justify-center"
+          className="fixed bottom-24 right-5 z-30 h-14 w-14 rounded-full bg-primary text-primary-foreground shadow-lg hover:scale-105 active:scale-95 transition-transform flex items-center justify-center"
           style={{ boxShadow: "0 10px 28px -8px color-mix(in oklab, var(--primary) 50%, transparent)" }}
         >
           <Plus className="h-6 w-6" />

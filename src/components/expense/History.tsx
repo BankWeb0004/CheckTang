@@ -22,7 +22,7 @@ function formatDateLabel(iso: string, lang: "en" | "th", t: ReturnType<typeof us
 }
 
 export function History() {
-  const { transactions, t, lang, deleteTransaction } = useStore();
+  const { transactions, t, lang, currency, deleteTransaction } = useStore();
 
   const grouped = useMemo(() => {
     const sorted = [...transactions].sort((a, b) =>
@@ -62,7 +62,7 @@ export function History() {
                 className="text-xs font-medium"
                 style={{ color: dayTotal < 0 ? "var(--expense)" : "var(--income)" }}
               >
-                {formatCurrency(dayTotal, lang)}
+                {formatCurrency(dayTotal, lang, currency)}
               </div>
             </div>
             <Card className="card-soft divide-y divide-border overflow-hidden">
@@ -96,7 +96,7 @@ export function History() {
                     </div>
                     <div className="text-sm font-semibold tabular-nums" style={{ color }}>
                       {isInc ? "+" : "−"}
-                      {formatCurrency(tx.amount, lang).replace("-", "")}
+                      {formatCurrency(tx.amount, lang, currency).replace("-", "")}
                     </div>
                     <Button
                       variant="ghost"

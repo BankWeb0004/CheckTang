@@ -3,6 +3,7 @@ import { useStore, formatCurrency } from "@/lib/expense-store";
 import { Card } from "@/components/ui/card";
 import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip } from "recharts";
 import { ArrowDownLeft, ArrowUpRight, Wallet } from "lucide-react";
+import { CheckTangLogo } from "@/components/expense/CheckTangLogo";
 
 const CHART_COLORS = [
   "oklch(0.72 0.07 30)",
@@ -14,7 +15,7 @@ const CHART_COLORS = [
 ];
 
 export function Dashboard() {
-  const { transactions, t, lang } = useStore();
+  const { transactions, t, lang, currency } = useStore();
 
   const { income, expense, balance, byCategory } = useMemo(() => {
     const now = new Date();
@@ -40,6 +41,10 @@ export function Dashboard() {
 
   return (
     <div className="space-y-5">
+      <div className="flex justify-center mb-2">
+        <CheckTangLogo />
+      </div>
+
       <Card className="card-soft p-6">
         <div className="flex items-center gap-2 text-muted-foreground text-sm">
           <Wallet className="h-4 w-4" />
@@ -49,7 +54,7 @@ export function Dashboard() {
           className="mt-2 text-4xl font-semibold tracking-tight"
           style={{ color: balanceNegative ? "var(--expense)" : undefined }}
         >
-          {formatCurrency(balance, lang)}
+          {formatCurrency(balance, lang, currency)}
         </div>
         <div className="mt-1 text-xs text-muted-foreground">{t.thisMonth}</div>
       </Card>
@@ -61,7 +66,7 @@ export function Dashboard() {
             {t.income}
           </div>
           <div className="mt-1.5 text-lg font-semibold" style={{ color: "var(--income)" }}>
-            {formatCurrency(income, lang)}
+            {formatCurrency(income, lang, currency)}
           </div>
         </Card>
         <Card className="card-soft p-4">
@@ -70,7 +75,7 @@ export function Dashboard() {
             {t.expense}
           </div>
           <div className="mt-1.5 text-lg font-semibold" style={{ color: "var(--expense)" }}>
-            {formatCurrency(expense, lang)}
+            {formatCurrency(expense, lang, currency)}
           </div>
         </Card>
       </div>
@@ -82,37 +87,39 @@ export function Dashboard() {
             {t.noData}
           </div>
         ) : (
-          <div className="h-56">
-            <ResponsiveContainer width="100%" height="100%">
-              <PieChart>
-                <Pie
-                  data={byCategory}
-                  dataKey="value"
-                  nameKey="name"
-                  innerRadius={50}
-                  outerRadius={80}
-                  paddingAngle={3}
-                  stroke="none"
-                >
-                  {byCategory.map((_, i) => (
-                    <Cell key={i} fill={CHART_COLORS[i % CHART_COLORS.length]} />
-                  ))}
-                </Pie>
-                <Tooltip
-                  contentStyle={{
-                    background: "var(--popover)",
-                    border: "1px solid var(--border)",
-                    borderRadius: 12,
-                    color: "var(--popover-foreground)",
-                  }}
-                  formatter={(v: number, n: string) => [
-                    formatCurrency(v, lang),
-                    t.categories[n as keyof typeof t.categories] ?? n,
-                  ]}
-                />
-              </PieChart>
-            </ResponsiveContainer>
-            <div className="flex flex-wrap gap-3 justify-center mt-3">
+          <div>
+            <div className="h-56">
+              <ResponsiveContainer width="100%" height="100%">
+                <PieChart>
+                  <Pie
+                    data={byCategory}
+                    dataKey="value"
+                    nameKey="name"
+                    innerRadius={50}
+                    outerRadius={80}
+                    paddingAngle={3}
+                    stroke="none"
+                  >
+                    {byCategory.map((_, i) => (
+                      <Cell key={i} fill={CHART_COLORS[i % CHART_COLORS.length]} />
+                    ))}
+                  </Pie>
+                  <Tooltip
+                    contentStyle={{
+                      background: "var(--popover)",
+                      border: "1px solid var(--border)",
+                      borderRadius: 12,
+                      color: "var(--popover-foreground)",
+                    }}
+                    formatter={(v: number, n: string) => [
+                      formatCurrency(v, lang, currency),
+                      t.categories[n as keyof typeof t.categories] ?? n,
+                    ]}
+                  />
+                </PieChart>
+              </ResponsiveContainer>
+            </div>
+            <div className="flex flex-wrap gap-3 justify-center mt-3 pb-2">
               {byCategory.map((c, i) => (
                 <div key={c.name} className="flex items-center gap-1.5 text-xs text-muted-foreground">
                   <span

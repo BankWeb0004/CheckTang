@@ -1,12 +1,20 @@
 import { useRef } from "react";
-import { useStore, THEME_PRESETS, Lang } from "@/lib/expense-store";
+import { useStore, THEME_PRESETS, Lang, CURRENCIES, CurrencyCode } from "@/lib/expense-store";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { Check, Upload, X } from "lucide-react";
 import { toast } from "sonner";
 
 export function Settings() {
-  const { theme, setTheme, lang, setLang, t, wallpaper, setWallpaper } = useStore();
+  const { theme, setTheme, lang, setLang, t, wallpaper, setWallpaper, currency, setCurrency } =
+    useStore();
   const fileRef = useRef<HTMLInputElement>(null);
 
   const onUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -41,6 +49,24 @@ export function Settings() {
             </button>
           ))}
         </div>
+      </Card>
+
+      <Card className="card-soft p-5">
+        <div className="text-sm font-medium mb-3">
+          {lang === "th" ? "สกุลเงิน" : "Currency"}
+        </div>
+        <Select value={currency} onValueChange={(v) => setCurrency(v as CurrencyCode)}>
+          <SelectTrigger className="rounded-xl">
+            <SelectValue />
+          </SelectTrigger>
+          <SelectContent>
+            {CURRENCIES.map((c) => (
+              <SelectItem key={c.code} value={c.code}>
+                {c.label}
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
       </Card>
 
       <Card className="card-soft p-5">
@@ -111,6 +137,24 @@ export function Settings() {
           className="hidden"
           onChange={onUpload}
         />
+      </Card>
+
+      <Card className="card-soft p-5">
+        <div className="text-sm font-medium mb-4">
+          {lang === "th" ? "เกี่ยวกับแอปพลิเคชัน" : "About Application"}
+        </div>
+        <div className="flex flex-col items-center gap-2 py-2">
+          <span
+            className="text-xl font-bold"
+            style={{ color: "oklch(0.28 0.06 240)" }}
+          >
+            เช็คตังค์
+          </span>
+          <span className="text-xs font-semibold tracking-widest text-muted-foreground uppercase">
+            DEV BY BANK
+          </span>
+          <span className="text-xs text-muted-foreground mt-1">v1.2.1</span>
+        </div>
       </Card>
     </div>
   );

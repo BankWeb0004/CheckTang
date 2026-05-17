@@ -2,6 +2,15 @@ import { createContext, useContext, useEffect, useState, ReactNode } from "react
 
 export type TxType = "income" | "expense";
 export type Lang = "en" | "th";
+export type CurrencyCode = "THB" | "USD" | "JPY" | "EUR" | "KRW";
+
+export const CURRENCIES: { code: CurrencyCode; symbol: string; label: string }[] = [
+  { code: "THB", symbol: "฿", label: "฿ THB" },
+  { code: "USD", symbol: "$", label: "$ USD" },
+  { code: "JPY", symbol: "¥", label: "¥ JPY" },
+  { code: "EUR", symbol: "€", label: "€ EUR" },
+  { code: "KRW", symbol: "₩", label: "₩ KRW" },
+];
 
 export interface Transaction {
   id: string;
@@ -298,7 +307,7 @@ export const THEME_PRESETS: ThemePreset[] = [
 
 export const translations = {
   en: {
-    appName: "Mindful Spend",
+    appName: "เช็คตังค์",
     dashboard: "Dashboard",
     history: "History",
     settings: "Settings",
@@ -342,7 +351,7 @@ export const translations = {
     methods: { Cash: "Cash", Bank: "Bank", Card: "Card" },
   },
   th: {
-    appName: "บันทึกรายรับ-รายจ่าย",
+    appName: "เช็คตังค์",
     dashboard: "แดชบอร์ด",
     history: "ประวัติ",
     settings: "ตั้งค่า",
@@ -401,6 +410,8 @@ interface StoreCtx {
   t: (typeof translations)["en"] | (typeof translations)["th"];
   wallpaper: string | null;
   setWallpaper: (w: string | null) => void;
+  currency: CurrencyCode;
+  setCurrency: (c: CurrencyCode) => void;
 }
 
 const Ctx = createContext<StoreCtx | null>(null);
@@ -410,6 +421,7 @@ const LS = {
   theme: "et.theme",
   lang: "et.lang",
   wallpaper: "et.wallpaper",
+  currency: "et.currency",
 };
 
 function applyTheme(themeId: string) {
@@ -423,6 +435,7 @@ export function ExpenseProvider({ children }: { children: ReactNode }) {
   const [theme, setThemeState] = useState<string>("warm-sand");
   const [lang, setLangState] = useState<Lang>("en");
   const [wallpaper, setWallpaperState] = useState<string | null>(null);
+  const [currency, setCurrencyState] = useState<CurrencyCode>("THB");
   const [hydrated, setHydrated] = useState(false);
 
   useEffect(() => {
@@ -435,6 +448,8 @@ export function ExpenseProvider({ children }: { children: ReactNode }) {
       if (lg === "th" || lg === "en") setLangState(lg);
       const wp = localStorage.getItem(LS.wallpaper);
       if (wp) setWallpaperState(wp);
+      const cur = localStorage.getItem(LS.currency) as CurrencyCode | null;
+      if (cur && CURRENCIES.some((c) => c.code === cur)) setCurrencyState(cur);
     } catch {}
     setHydrated(true);
   }, []);
@@ -471,6 +486,11 @@ export function ExpenseProvider({ children }: { children: ReactNode }) {
     else localStorage.removeItem(LS.wallpaper);
   };
 
+  const setCurrency = (c: CurrencyCode) => {
+    setCurrencyState(c);
+    localStorage.setItem(LS.currency, c);
+  };
+
   return (
     <Ctx.Provider
       value={{
@@ -484,6 +504,8 @@ export function ExpenseProvider({ children }: { children: ReactNode }) {
         t: translations[lang],
         wallpaper,
         setWallpaper,
+        currency,
+        setCurrency,
       }}
     >
       {children}
@@ -497,12 +519,15 @@ export function useStore() {
   return v;
 }
 
-export function formatCurrency(n: number, lang: Lang) {
+export function formatCurrency(n: number, lang: Lang, currency: CurrencyCode = "THB") {
   const sign = n < 0 ? "-" : "";
   const abs = Math.abs(n);
-  const formatted = abs.toLocaleString(lang === "th" ? "th-TH" : "en-US", {
-    minimumFractionDigits: 2,
-    maximumFractionDigits: 2,
+  const symbol = CURRENCIES.find((c) => c.code === currency)?.symbol ?? "฿";
+  const locale = lang === "th" ? "th-TH" : "en-US";
+  const decimals = currency === "JPY" || currency === "KRW" ? 0 : 2;
+  const formatted = abs.toLocaleString(locale, {
+    minimumFractionDigits: decimals,
+    maximumFractionDigits: decimals,
   });
-  return `${sign}${lang === "th" ? "฿" : "$"}${formatted}`;
+  return `${sign}${symbol}${formatted}`;
 }
