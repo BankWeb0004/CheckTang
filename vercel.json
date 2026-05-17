@@ -1,15 +1,5 @@
 {
-  "version": 2,
-  "builds": [
-    {
-      "src": ".output/server/index.mjs",
-      "use": "@vercel/node"
-    }
-  ],
-  "routes": [
-    {
-      "src": "/(.*)",
-      "dest": ".output/server/index.mjs"
-    }
-  ]
+  "framework": "nitro",
+  "buildCommand": "bun run build",
+  "outputDirectory": ".output/public"
 }
