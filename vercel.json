@@ -1,5 +1,7 @@
 {
-  "framework": "nitro",
+  "version": 2,
+  "framework": null,
   "buildCommand": "npm run build",
-  "outputDirectory": ".output/public"
+  "outputDirectory": ".output/public",
+  "cleanUrls": true
 }
