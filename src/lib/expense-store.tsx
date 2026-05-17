@@ -398,7 +398,7 @@ interface StoreCtx {
   setTheme: (id: string) => void;
   lang: Lang;
   setLang: (l: Lang) => void;
-  t: typeof translations.en;
+  t: (typeof translations)["en"] | (typeof translations)["th"];
   wallpaper: string | null;
   setWallpaper: (w: string | null) => void;
 }
