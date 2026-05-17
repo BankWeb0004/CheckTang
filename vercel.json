@@ -1,5 +1,5 @@
 {
   "framework": "nitro",
-  "buildCommand": "bun run build",
+  "buildCommand": "npm run build",
   "outputDirectory": ".output/public"
 }
