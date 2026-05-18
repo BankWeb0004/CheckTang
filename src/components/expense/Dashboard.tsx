@@ -142,7 +142,7 @@ export function Dashboard() {
                 </PieChart>
               </ResponsiveContainer>
             </div>
-            <div className="flex flex-wrap gap-3 justify-center mt-3 pb-2 text-slate-900 dark:text-slate-200">
+            <div className="flex flex-wrap gap-3 justify-center mt-3 pb-2 text-slate-900 dark:text-white">
               {byCategory.map((c, i) => (
                 <div key={c.name} className="flex items-center gap-1.5 text-xs">
                   <span
