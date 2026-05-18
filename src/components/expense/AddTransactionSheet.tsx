@@ -1,4 +1,4 @@
-import { useState, useCallback } from "react";
+import { useState, useCallback, useMemo } from "react";
 import { useStore, CATEGORY_KEYS, METHOD_KEYS, TxType } from "@/lib/expense-store";
 import {
   Sheet,
@@ -74,7 +74,18 @@ function createEmptyRow(): TransactionRow {
 export function AddTransactionSheet({ open, onOpenChange }: Props) {
   const { t, addTransactions } = useStore();
   const [type, setType] = useState<TxType>("expense");
-  const [rows, setRows] = useState<TransactionRow[]>([createEmptyRow()]);
+  // Lazy initialization for rows to avoid blocking initial render
+  const [rows, setRows] = useState<TransactionRow[]>(() => [createEmptyRow()]);
+
+  // Memoize category and method options to prevent re-renders
+  const categoryOptions = useMemo(
+    () => CATEGORY_KEYS.map((c) => ({ key: c, label: t.categories[c] })),
+    [t.categories]
+  );
+  const methodOptions = useMemo(
+    () => METHOD_KEYS.map((m) => ({ key: m, label: t.methods[m] })),
+    [t.methods]
+  );
 
   const reset = useCallback(() => {
     setType("expense");
@@ -148,7 +159,8 @@ export function AddTransactionSheet({ open, onOpenChange }: Props) {
     <Sheet open={open} onOpenChange={onOpenChange}>
       <SheetContent
         side="bottom"
-        className="rounded-t-3xl border-border max-h-[92vh] overflow-y-auto bg-card"
+        className="rounded-t-3xl border-border max-h-[92vh] overflow-y-auto bg-card will-change-transform"
+        style={{ transform: "translateZ(0)" }}
       >
         <SheetHeader>
           <SheetTitle className="text-center">
@@ -235,9 +247,9 @@ export function AddTransactionSheet({ open, onOpenChange }: Props) {
                         <SelectValue />
                       </SelectTrigger>
                       <SelectContent>
-                        {CATEGORY_KEYS.map((c) => (
-                          <SelectItem key={c} value={c}>
-                            {t.categories[c]}
+                        {categoryOptions.map((opt) => (
+                          <SelectItem key={opt.key} value={opt.key}>
+                            {opt.label}
                           </SelectItem>
                         ))}
                       </SelectContent>
@@ -253,9 +265,9 @@ export function AddTransactionSheet({ open, onOpenChange }: Props) {
                         <SelectValue />
                       </SelectTrigger>
                       <SelectContent>
-                        {METHOD_KEYS.map((m) => (
-                          <SelectItem key={m} value={m}>
-                            {t.methods[m]}
+                        {methodOptions.map((opt) => (
+                          <SelectItem key={opt.key} value={opt.key}>
+                            {opt.label}
                           </SelectItem>
                         ))}
                       </SelectContent>
