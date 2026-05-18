@@ -215,6 +215,8 @@ export const translations = {
     yesterday: "Yesterday",
     optional: "optional",
     amountRequired: "Please enter an amount greater than zero",
+    addAnother: "Add Another",
+    itemCount: "items",
     categories: {
       Food: "Food",
       Transport: "Transport",
@@ -259,6 +261,8 @@ export const translations = {
     yesterday: "เมื่อวาน",
     optional: "ไม่บังคับ",
     amountRequired: "กรุณากรอกจำนวนเงินที่มากกว่าศูนย์",
+    addAnother: "เพิ่มรายการอีก",
+    itemCount: "รายการ",
     categories: {
       Food: "อาหาร",
       Transport: "เดินทาง",
@@ -277,6 +281,7 @@ export const METHOD_KEYS = ["Cash", "Bank", "Card"] as const;
 interface StoreCtx {
   transactions: Transaction[];
   addTransaction: (t: Omit<Transaction, "id" | "createdAt">) => void;
+  addTransactions: (txs: Omit<Transaction, "id" | "createdAt">[]) => void;
   deleteTransaction: (id: string) => void;
   theme: string;
   setTheme: (id: string) => void;
@@ -352,6 +357,15 @@ export function ExpenseProvider({ children }: { children: ReactNode }) {
     ]);
   };
 
+  const addTransactions: StoreCtx["addTransactions"] = (txs) => {
+    const newTxs = txs.map((t) => ({
+      ...t,
+      id: crypto.randomUUID(),
+      createdAt: Date.now(),
+    }));
+    setTransactions((prev) => [...newTxs, ...prev]);
+  };
+
   const deleteTransaction = (id: string) =>
     setTransactions((prev) => prev.filter((t) => t.id !== id));
 
@@ -383,6 +397,7 @@ export function ExpenseProvider({ children }: { children: ReactNode }) {
       value={{
         transactions,
         addTransaction,
+        addTransactions,
         deleteTransaction,
         theme,
         setTheme,

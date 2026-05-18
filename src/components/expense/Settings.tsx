@@ -87,35 +87,38 @@ export function Settings() {
         <div className="text-sm font-medium mb-5 text-foreground">
           {lang === "th" ? "สีหลัก" : "Accent Color"}
         </div>
-        <div className="flex gap-6 justify-center">
+        <div className="flex gap-4 justify-center items-start">
           {THEME_PRESETS.map((p) => {
             const active = theme === p.id;
             return (
               <button
                 key={p.id}
                 onClick={() => setTheme(p.id)}
-                className="flex flex-col items-center gap-2.5"
+                className="flex flex-col items-center gap-3 p-2 rounded-xl transition-all duration-200 min-w-[72px]"
+                style={{
+                  background: active ? "var(--muted)" : "transparent",
+                }}
                 aria-label={lang === "th" ? p.nameTh : p.nameEn}
               >
                 <div
-                  className="relative h-12 w-12 rounded-full transition-all duration-200 flex items-center justify-center"
+                  className="relative h-14 w-14 rounded-full transition-all duration-200 flex items-center justify-center shrink-0"
                   style={{
                     background: p.accentColor,
                     outline: active ? `3px solid var(--foreground)` : "3px solid transparent",
-                    outlineOffset: "2px",
-                    boxShadow: "0 3px 10px rgba(0,0,0,0.18)",
-                    transform: active ? "scale(1.12)" : "scale(1)",
+                    outlineOffset: "3px",
+                    boxShadow: "0 4px 12px rgba(0,0,0,0.2)",
+                    transform: active ? "scale(1.08)" : "scale(1)",
                   }}
                 >
                   {active && (
                     <Check
-                      className="h-5 w-5"
+                      className="h-6 w-6"
                       style={{ color: "#fff", filter: "drop-shadow(0 1px 2px rgba(0,0,0,0.5))" }}
                     />
                   )}
                 </div>
                 <span
-                  className="text-xs font-medium text-center leading-tight max-w-[60px]"
+                  className="text-xs font-medium text-center leading-tight whitespace-nowrap"
                   style={{
                     color: active ? "var(--foreground)" : "var(--muted-foreground)",
                   }}
