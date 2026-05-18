@@ -39,10 +39,30 @@ export function Dashboard() {
 
   const balanceNegative = balance < 0;
 
+  const today = new Date();
+  const dateLabel = today.toLocaleDateString("th-TH", {
+    day: "numeric",
+    month: "short",
+    year: "2-digit",
+  });
+
   return (
-    <div className="space-y-5">
-      <div className="flex justify-center mb-2">
-        <CheckTangLogo />
+    <div className="space-y-4">
+      <div className="flex items-center justify-between gap-3">
+        <p className="text-[0.72rem] font-medium tracking-[0.08em] text-slate-600 dark:text-slate-300">
+          {dateLabel}
+        </p>
+        <div className="flex items-center gap-3">
+          <CheckTangLogo className="text-slate-900 dark:text-slate-100" showLabel={false} />
+          <div className="flex flex-col items-end gap-0.5 text-right">
+            <span className="text-sm font-semibold leading-none text-slate-900 dark:text-slate-100">
+              เช็คตังค์
+            </span>
+            <span className="text-[0.68rem] uppercase tracking-[0.25em] text-slate-600 dark:text-slate-300">
+              CHECK TANG
+            </span>
+          </div>
+        </div>
       </div>
 
       <Card className="card-soft p-6">
@@ -109,8 +129,11 @@ export function Dashboard() {
                       background: "var(--popover)",
                       border: "1px solid var(--border)",
                       borderRadius: 12,
-                      color: "var(--popover-foreground)",
+                      color: "var(--foreground)",
+                      padding: "0.75rem 0.9rem",
                     }}
+                    itemStyle={{ color: "var(--foreground)", fontWeight: 600 }}
+                    labelStyle={{ color: "var(--muted-foreground)" }}
                     formatter={(v: number, n: string) => [
                       formatCurrency(v, lang, currency),
                       t.categories[n as keyof typeof t.categories] ?? n,
@@ -119,9 +142,9 @@ export function Dashboard() {
                 </PieChart>
               </ResponsiveContainer>
             </div>
-            <div className="flex flex-wrap gap-3 justify-center mt-3 pb-2">
+            <div className="flex flex-wrap gap-3 justify-center mt-3 pb-2 text-slate-900 dark:text-slate-200">
               {byCategory.map((c, i) => (
-                <div key={c.name} className="flex items-center gap-1.5 text-xs text-muted-foreground">
+                <div key={c.name} className="flex items-center gap-1.5 text-xs">
                   <span
                     className="h-2.5 w-2.5 rounded-full"
                     style={{ background: CHART_COLORS[i % CHART_COLORS.length] }}
