@@ -1,6 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useState } from "react";
-import { ExpenseProvider, useStore } from "@/lib/expense-store";
+import { ExpenseProvider, useStore, Transaction } from "@/lib/expense-store";
 import { Dashboard } from "@/components/expense/Dashboard";
 import { History } from "@/components/expense/History";
 import { Settings } from "@/components/expense/Settings";
@@ -47,7 +47,8 @@ type Tab = "dashboard" | "history" | "settings";
 function AppShell() {
   const { t, wallpaper } = useStore();
   const [tab, setTab] = useState<Tab>("dashboard");
-  const [addOpen, setAddOpen] = useState(false);
+  const [sheetOpen, setSheetOpen] = useState(false);
+  const [editTransaction, setEditTransaction] = useState<Transaction | null>(null);
 
   const tabs: { id: Tab; label: string; icon: typeof Home }[] = [
     { id: "dashboard", label: t.dashboard, icon: Home },
@@ -74,14 +75,24 @@ function AppShell() {
       <div className="relative max-w-md mx-auto px-5 pt-4 pb-32">
         <main>
           {tab === "dashboard" && <Dashboard />}
-          {tab === "history" && <History />}
+          {tab === "history" && (
+            <History
+              onEdit={(tx) => {
+                setEditTransaction(tx);
+                setSheetOpen(true);
+              }}
+            />
+          )}
           {tab === "settings" && <Settings />}
         </main>
       </div>
 
       {tab !== "settings" && (
         <button
-          onClick={() => setAddOpen(true)}
+          onClick={() => {
+            setEditTransaction(null);
+            setSheetOpen(true);
+          }}
           aria-label={t.add}
           className="fixed bottom-24 right-5 z-30 h-14 w-14 rounded-full bg-primary text-primary-foreground shadow-lg hover:scale-105 active:scale-95 transition-transform flex items-center justify-center"
           style={{ boxShadow: "0 10px 28px -8px color-mix(in oklab, var(--primary) 50%, transparent)" }}
@@ -114,7 +125,14 @@ function AppShell() {
         </div>
       </nav>
 
-      <AddTransactionSheet open={addOpen} onOpenChange={setAddOpen} />
+      <AddTransactionSheet
+        open={sheetOpen}
+        onOpenChange={(open) => {
+          if (!open) setEditTransaction(null);
+          setSheetOpen(open);
+        }}
+        editTransaction={editTransaction}
+      />
       <Toaster />
     </div>
   );

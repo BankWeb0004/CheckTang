@@ -205,6 +205,7 @@ export const translations = {
     recent: "Recent Transactions",
     noTransactions: "No transactions yet. Tap + to add one.",
     delete: "Delete",
+    editTransaction: "Edit Transaction",
     confirmDelete: "Delete this transaction?",
     theme: "Color Theme",
     wallpaper: "Custom Wallpaper",
@@ -214,6 +215,8 @@ export const translations = {
     today: "Today",
     yesterday: "Yesterday",
     optional: "optional",
+    addAnother: "Add another",
+    itemCount: "items",
     amountRequired: "Please enter an amount greater than zero",
     categories: {
       Food: "Food",
@@ -249,6 +252,7 @@ export const translations = {
     recent: "รายการล่าสุด",
     noTransactions: "ยังไม่มีรายการ กดปุ่ม + เพื่อเพิ่ม",
     delete: "ลบ",
+    editTransaction: "แก้ไขรายการ",
     confirmDelete: "ลบรายการนี้?",
     theme: "ธีมสี",
     wallpaper: "วอลเปเปอร์",
@@ -258,6 +262,8 @@ export const translations = {
     today: "วันนี้",
     yesterday: "เมื่อวาน",
     optional: "ไม่บังคับ",
+    addAnother: "เพิ่มอีก",
+    itemCount: "รายการ",
     amountRequired: "กรุณากรอกจำนวนเงินที่มากกว่าศูนย์",
     categories: {
       Food: "อาหาร",
@@ -277,6 +283,8 @@ export const METHOD_KEYS = ["Cash", "Bank", "Card"] as const;
 interface StoreCtx {
   transactions: Transaction[];
   addTransaction: (t: Omit<Transaction, "id" | "createdAt">) => void;
+  addTransactions: (items: Array<Omit<Transaction, "id" | "createdAt">>) => void;
+  updateTransaction: (id: string, updatedData: Partial<Transaction>) => void;
   deleteTransaction: (id: string) => void;
   theme: string;
   setTheme: (id: string) => void;
@@ -352,6 +360,23 @@ export function ExpenseProvider({ children }: { children: ReactNode }) {
     ]);
   };
 
+  const addTransactions: StoreCtx["addTransactions"] = (items) => {
+    if (!items.length) return;
+    const now = Date.now();
+    const prepared = items.map((item) => ({
+      ...item,
+      id: crypto.randomUUID(),
+      createdAt: now,
+    }));
+    setTransactions((prev) => [...prepared, ...prev]);
+  };
+
+  const updateTransaction: StoreCtx["updateTransaction"] = (id, updatedData) => {
+    setTransactions((prev) =>
+      prev.map((tx) => (tx.id === id ? { ...tx, ...updatedData } : tx))
+    );
+  };
+
   const deleteTransaction = (id: string) =>
     setTransactions((prev) => prev.filter((t) => t.id !== id));
 
@@ -383,6 +408,8 @@ export function ExpenseProvider({ children }: { children: ReactNode }) {
       value={{
         transactions,
         addTransaction,
+        addTransactions,
+        updateTransaction,
         deleteTransaction,
         theme,
         setTheme,

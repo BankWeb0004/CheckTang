@@ -2,7 +2,7 @@ import { useMemo } from "react";
 import { useStore, formatCurrency, Transaction } from "@/lib/expense-store";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Trash2 } from "lucide-react";
+import { Trash2, Edit3 } from "lucide-react";
 
 function formatDateLabel(iso: string, lang: "en" | "th", t: ReturnType<typeof useStore>["t"]) {
   const d = new Date(iso);
@@ -21,7 +21,11 @@ function formatDateLabel(iso: string, lang: "en" | "th", t: ReturnType<typeof us
   });
 }
 
-export function History() {
+interface Props {
+  onEdit?: (tx: Transaction) => void;
+}
+
+export function History({ onEdit }: Props) {
   const { transactions, t, lang, currency, deleteTransaction } = useStore();
 
   const grouped = useMemo(() => {
@@ -98,17 +102,28 @@ export function History() {
                       {isInc ? "+" : "−"}
                       {formatCurrency(tx.amount, lang, currency).replace("-", "")}
                     </div>
-                    <Button
-                      variant="ghost"
-                      size="icon"
-                      className="h-8 w-8 opacity-40 hover:opacity-100"
-                      onClick={() => {
-                        if (confirm(t.confirmDelete)) deleteTransaction(tx.id);
-                      }}
-                      aria-label={t.delete}
-                    >
-                      <Trash2 className="h-4 w-4" />
-                    </Button>
+                    <div className="flex items-center gap-2">
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        className="h-8 w-8 opacity-40 hover:opacity-100"
+                        onClick={() => onEdit?.(tx)}
+                        aria-label={t.editTransaction}
+                      >
+                        <Edit3 className="h-4 w-4" />
+                      </Button>
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        className="h-8 w-8 opacity-40 hover:opacity-100"
+                        onClick={() => {
+                          if (confirm(t.confirmDelete)) deleteTransaction(tx.id);
+                        }}
+                        aria-label={t.delete}
+                      >
+                        <Trash2 className="h-4 w-4" />
+                      </Button>
+                    </div>
                   </div>
                 );
               })}
