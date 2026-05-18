@@ -27,280 +27,155 @@ export interface ThemePreset {
   id: string;
   nameEn: string;
   nameTh: string;
-  vars: Record<string, string>;
-  swatch: string[];
+  accentColor: string;
+  lightVars: Record<string, string>;
+  darkVars: Record<string, string>;
 }
 
-// All themes use oklch tokens compatible with src/styles.css variables
+// 3 accent palettes × light/dark base = clean, user-configurable system
 export const THEME_PRESETS: ThemePreset[] = [
   {
-    id: "warm-sand",
-    nameEn: "Warm Sand",
-    nameTh: "ทรายอุ่น",
-    swatch: ["#faf8f5", "#f0ebe3", "#c9b99a", "#8b7355"],
-    vars: {
-      "--background": "oklch(0.98 0.008 80)",
-      "--foreground": "oklch(0.28 0.02 60)",
-      "--card": "oklch(0.995 0.005 80)",
-      "--card-foreground": "oklch(0.28 0.02 60)",
-      "--popover": "oklch(0.995 0.005 80)",
-      "--popover-foreground": "oklch(0.28 0.02 60)",
-      "--primary": "oklch(0.55 0.05 60)",
-      "--primary-foreground": "oklch(0.98 0.008 80)",
-      "--secondary": "oklch(0.94 0.015 75)",
-      "--secondary-foreground": "oklch(0.35 0.025 60)",
-      "--muted": "oklch(0.94 0.015 75)",
-      "--muted-foreground": "oklch(0.5 0.02 65)",
-      "--accent": "oklch(0.92 0.025 70)",
-      "--accent-foreground": "oklch(0.32 0.025 60)",
-      "--border": "oklch(0.9 0.015 75)",
-      "--input": "oklch(0.9 0.015 75)",
-      "--ring": "oklch(0.7 0.03 65)",
-      "--income": "oklch(0.7 0.07 145)",
-      "--expense": "oklch(0.62 0.09 28)",
-    },
-  },
-  {
-    id: "cloud-white",
-    nameEn: "Cloud White",
-    nameTh: "เมฆขาว",
-    swatch: ["#fafbfc", "#e8ecf1", "#94a3b8", "#3b82f6"],
-    vars: {
-      "--background": "oklch(0.985 0.005 250)",
-      "--foreground": "oklch(0.25 0.02 250)",
+    id: "blue",
+    nameEn: "Classic Blue",
+    nameTh: "น้ำเงินคลาสสิก",
+    accentColor: "#3b82f6",
+    lightVars: {
+      "--background": "oklch(0.985 0.005 240)",
+      "--foreground": "oklch(0.22 0.025 240)",
       "--card": "oklch(1 0 0)",
-      "--card-foreground": "oklch(0.25 0.02 250)",
+      "--card-foreground": "oklch(0.22 0.025 240)",
       "--popover": "oklch(1 0 0)",
-      "--popover-foreground": "oklch(0.25 0.02 250)",
-      "--primary": "oklch(0.6 0.08 240)",
+      "--popover-foreground": "oklch(0.22 0.025 240)",
+      "--primary": "oklch(0.58 0.19 250)",
       "--primary-foreground": "oklch(0.99 0 0)",
-      "--secondary": "oklch(0.95 0.01 250)",
-      "--secondary-foreground": "oklch(0.3 0.02 250)",
-      "--muted": "oklch(0.95 0.01 250)",
-      "--muted-foreground": "oklch(0.5 0.02 250)",
-      "--accent": "oklch(0.93 0.015 240)",
-      "--accent-foreground": "oklch(0.3 0.02 250)",
-      "--border": "oklch(0.9 0.012 250)",
-      "--input": "oklch(0.9 0.012 250)",
-      "--ring": "oklch(0.7 0.04 240)",
-      "--income": "oklch(0.72 0.08 150)",
-      "--expense": "oklch(0.65 0.1 25)",
+      "--secondary": "oklch(0.94 0.015 240)",
+      "--secondary-foreground": "oklch(0.3 0.025 240)",
+      "--muted": "oklch(0.94 0.012 240)",
+      "--muted-foreground": "oklch(0.52 0.025 240)",
+      "--accent": "oklch(0.92 0.03 240)",
+      "--accent-foreground": "oklch(0.28 0.025 240)",
+      "--border": "oklch(0.89 0.015 240)",
+      "--input": "oklch(0.89 0.015 240)",
+      "--ring": "oklch(0.72 0.1 250)",
+      "--income": "oklch(0.68 0.15 160)",
+      "--expense": "oklch(0.62 0.18 28)",
+    },
+    darkVars: {
+      "--background": "oklch(0.14 0.02 240)",
+      "--foreground": "oklch(0.93 0.01 240)",
+      "--card": "oklch(0.19 0.025 240)",
+      "--card-foreground": "oklch(0.93 0.01 240)",
+      "--popover": "oklch(0.19 0.025 240)",
+      "--popover-foreground": "oklch(0.93 0.01 240)",
+      "--primary": "oklch(0.65 0.2 250)",
+      "--primary-foreground": "oklch(0.14 0.02 240)",
+      "--secondary": "oklch(0.26 0.03 240)",
+      "--secondary-foreground": "oklch(0.93 0.01 240)",
+      "--muted": "oklch(0.26 0.025 240)",
+      "--muted-foreground": "oklch(0.65 0.02 240)",
+      "--accent": "oklch(0.3 0.04 240)",
+      "--accent-foreground": "oklch(0.93 0.01 240)",
+      "--border": "oklch(0.3 0.03 240)",
+      "--input": "oklch(0.3 0.03 240)",
+      "--ring": "oklch(0.58 0.15 250)",
+      "--income": "oklch(0.72 0.16 160)",
+      "--expense": "oklch(0.7 0.18 25)",
     },
   },
   {
-    id: "sage-cream",
-    nameEn: "Sage & Cream",
-    nameTh: "เซจครีม",
-    swatch: ["#f5f0e8", "#dce5d4", "#a8c0a0", "#7d9b76"],
-    vars: {
-      "--background": "oklch(0.97 0.012 100)",
-      "--foreground": "oklch(0.28 0.025 140)",
-      "--card": "oklch(0.99 0.008 100)",
-      "--card-foreground": "oklch(0.28 0.025 140)",
-      "--popover": "oklch(0.99 0.008 100)",
-      "--popover-foreground": "oklch(0.28 0.025 140)",
-      "--primary": "oklch(0.55 0.05 140)",
-      "--primary-foreground": "oklch(0.98 0.008 100)",
-      "--secondary": "oklch(0.92 0.02 130)",
-      "--secondary-foreground": "oklch(0.32 0.03 140)",
-      "--muted": "oklch(0.93 0.018 120)",
-      "--muted-foreground": "oklch(0.5 0.02 130)",
-      "--accent": "oklch(0.9 0.03 140)",
-      "--accent-foreground": "oklch(0.3 0.03 140)",
-      "--border": "oklch(0.88 0.02 130)",
-      "--input": "oklch(0.88 0.02 130)",
-      "--ring": "oklch(0.7 0.04 140)",
-      "--income": "oklch(0.65 0.08 145)",
-      "--expense": "oklch(0.62 0.08 30)",
-    },
-  },
-  {
-    id: "blush-lavender",
-    nameEn: "Blush & Lavender",
-    nameTh: "ชมพูลาเวนเดอร์",
-    swatch: ["#f8e8ee", "#e8c5d0", "#c9a0dc", "#9b72cf"],
-    vars: {
-      "--background": "oklch(0.97 0.012 340)",
-      "--foreground": "oklch(0.3 0.04 320)",
-      "--card": "oklch(0.99 0.006 340)",
-      "--card-foreground": "oklch(0.3 0.04 320)",
-      "--popover": "oklch(0.99 0.006 340)",
-      "--popover-foreground": "oklch(0.3 0.04 320)",
-      "--primary": "oklch(0.6 0.08 310)",
+    id: "green",
+    nameEn: "Emerald Green",
+    nameTh: "เขียวมรกต",
+    accentColor: "#22c55e",
+    lightVars: {
+      "--background": "oklch(0.98 0.008 145)",
+      "--foreground": "oklch(0.22 0.025 145)",
+      "--card": "oklch(1 0 0)",
+      "--card-foreground": "oklch(0.22 0.025 145)",
+      "--popover": "oklch(1 0 0)",
+      "--popover-foreground": "oklch(0.22 0.025 145)",
+      "--primary": "oklch(0.55 0.18 155)",
       "--primary-foreground": "oklch(0.99 0 0)",
-      "--secondary": "oklch(0.93 0.025 340)",
-      "--secondary-foreground": "oklch(0.35 0.04 320)",
-      "--muted": "oklch(0.93 0.02 340)",
-      "--muted-foreground": "oklch(0.5 0.03 320)",
-      "--accent": "oklch(0.9 0.04 320)",
-      "--accent-foreground": "oklch(0.32 0.04 320)",
-      "--border": "oklch(0.88 0.025 330)",
-      "--input": "oklch(0.88 0.025 330)",
-      "--ring": "oklch(0.7 0.05 320)",
-      "--income": "oklch(0.7 0.08 150)",
-      "--expense": "oklch(0.65 0.09 20)",
+      "--secondary": "oklch(0.94 0.02 145)",
+      "--secondary-foreground": "oklch(0.3 0.025 145)",
+      "--muted": "oklch(0.94 0.015 145)",
+      "--muted-foreground": "oklch(0.52 0.02 145)",
+      "--accent": "oklch(0.92 0.03 145)",
+      "--accent-foreground": "oklch(0.28 0.025 145)",
+      "--border": "oklch(0.89 0.018 145)",
+      "--input": "oklch(0.89 0.018 145)",
+      "--ring": "oklch(0.68 0.12 155)",
+      "--income": "oklch(0.6 0.18 155)",
+      "--expense": "oklch(0.62 0.18 28)",
+    },
+    darkVars: {
+      "--background": "oklch(0.14 0.02 145)",
+      "--foreground": "oklch(0.93 0.01 145)",
+      "--card": "oklch(0.19 0.025 145)",
+      "--card-foreground": "oklch(0.93 0.01 145)",
+      "--popover": "oklch(0.19 0.025 145)",
+      "--popover-foreground": "oklch(0.93 0.01 145)",
+      "--primary": "oklch(0.62 0.2 155)",
+      "--primary-foreground": "oklch(0.14 0.02 145)",
+      "--secondary": "oklch(0.26 0.03 145)",
+      "--secondary-foreground": "oklch(0.93 0.01 145)",
+      "--muted": "oklch(0.26 0.025 145)",
+      "--muted-foreground": "oklch(0.65 0.02 145)",
+      "--accent": "oklch(0.3 0.04 145)",
+      "--accent-foreground": "oklch(0.93 0.01 145)",
+      "--border": "oklch(0.3 0.03 145)",
+      "--input": "oklch(0.3 0.03 145)",
+      "--ring": "oklch(0.55 0.15 155)",
+      "--income": "oklch(0.72 0.18 155)",
+      "--expense": "oklch(0.7 0.18 25)",
     },
   },
   {
-    id: "ocean-deep",
-    nameEn: "Ocean Mist",
-    nameTh: "หมอกทะเล",
-    swatch: ["#eaf2f5", "#c8dce4", "#5cbdb9", "#2d6e8a"],
-    vars: {
-      "--background": "oklch(0.96 0.012 220)",
-      "--foreground": "oklch(0.27 0.04 230)",
-      "--card": "oklch(0.99 0.006 220)",
-      "--card-foreground": "oklch(0.27 0.04 230)",
-      "--popover": "oklch(0.99 0.006 220)",
-      "--popover-foreground": "oklch(0.27 0.04 230)",
-      "--primary": "oklch(0.55 0.07 220)",
+    id: "rose",
+    nameEn: "Soft Rose",
+    nameTh: "กุหลาบอ่อน",
+    accentColor: "#f43f5e",
+    lightVars: {
+      "--background": "oklch(0.985 0.008 10)",
+      "--foreground": "oklch(0.22 0.025 10)",
+      "--card": "oklch(1 0 0)",
+      "--card-foreground": "oklch(0.22 0.025 10)",
+      "--popover": "oklch(1 0 0)",
+      "--popover-foreground": "oklch(0.22 0.025 10)",
+      "--primary": "oklch(0.58 0.22 10)",
       "--primary-foreground": "oklch(0.99 0 0)",
-      "--secondary": "oklch(0.92 0.02 210)",
-      "--secondary-foreground": "oklch(0.32 0.04 230)",
-      "--muted": "oklch(0.92 0.018 215)",
-      "--muted-foreground": "oklch(0.5 0.03 225)",
-      "--accent": "oklch(0.9 0.03 200)",
-      "--accent-foreground": "oklch(0.3 0.04 230)",
-      "--border": "oklch(0.88 0.02 215)",
-      "--input": "oklch(0.88 0.02 215)",
-      "--ring": "oklch(0.7 0.04 220)",
-      "--income": "oklch(0.7 0.08 160)",
-      "--expense": "oklch(0.63 0.09 25)",
+      "--secondary": "oklch(0.95 0.02 10)",
+      "--secondary-foreground": "oklch(0.3 0.025 10)",
+      "--muted": "oklch(0.95 0.015 10)",
+      "--muted-foreground": "oklch(0.52 0.025 10)",
+      "--accent": "oklch(0.93 0.03 10)",
+      "--accent-foreground": "oklch(0.28 0.025 10)",
+      "--border": "oklch(0.9 0.018 10)",
+      "--input": "oklch(0.9 0.018 10)",
+      "--ring": "oklch(0.7 0.15 10)",
+      "--income": "oklch(0.68 0.15 160)",
+      "--expense": "oklch(0.58 0.22 10)",
     },
-  },
-  {
-    id: "paper-ink",
-    nameEn: "Paper & Ink",
-    nameTh: "กระดาษหมึก",
-    swatch: ["#f5f3ee", "#e8e4dd", "#7a7873", "#2d2d2d"],
-    vars: {
-      "--background": "oklch(0.965 0.005 90)",
-      "--foreground": "oklch(0.22 0.005 90)",
-      "--card": "oklch(0.99 0.003 90)",
-      "--card-foreground": "oklch(0.22 0.005 90)",
-      "--popover": "oklch(0.99 0.003 90)",
-      "--popover-foreground": "oklch(0.22 0.005 90)",
-      "--primary": "oklch(0.3 0.005 90)",
-      "--primary-foreground": "oklch(0.97 0.005 90)",
-      "--secondary": "oklch(0.93 0.008 90)",
-      "--secondary-foreground": "oklch(0.28 0.005 90)",
-      "--muted": "oklch(0.93 0.008 90)",
-      "--muted-foreground": "oklch(0.5 0.005 90)",
-      "--accent": "oklch(0.91 0.01 90)",
-      "--accent-foreground": "oklch(0.28 0.005 90)",
-      "--border": "oklch(0.88 0.008 90)",
-      "--input": "oklch(0.88 0.008 90)",
-      "--ring": "oklch(0.65 0.008 90)",
-      "--income": "oklch(0.65 0.07 145)",
-      "--expense": "oklch(0.6 0.08 28)",
-    },
-  },
-  {
-    id: "midnight",
-    nameEn: "Midnight Indigo",
-    nameTh: "ราตรีคราม",
-    swatch: ["#1a1a2e", "#252548", "#4f46e5", "#a5b4fc"],
-    vars: {
-      "--background": "oklch(0.2 0.03 270)",
-      "--foreground": "oklch(0.94 0.01 270)",
-      "--card": "oklch(0.25 0.035 270)",
-      "--card-foreground": "oklch(0.94 0.01 270)",
-      "--popover": "oklch(0.25 0.035 270)",
-      "--popover-foreground": "oklch(0.94 0.01 270)",
-      "--primary": "oklch(0.7 0.12 270)",
-      "--primary-foreground": "oklch(0.2 0.03 270)",
-      "--secondary": "oklch(0.3 0.04 270)",
-      "--secondary-foreground": "oklch(0.94 0.01 270)",
-      "--muted": "oklch(0.3 0.04 270)",
-      "--muted-foreground": "oklch(0.7 0.02 270)",
-      "--accent": "oklch(0.35 0.05 270)",
-      "--accent-foreground": "oklch(0.94 0.01 270)",
-      "--border": "oklch(0.35 0.04 270)",
-      "--input": "oklch(0.35 0.04 270)",
-      "--ring": "oklch(0.6 0.1 270)",
-      "--income": "oklch(0.75 0.1 150)",
-      "--expense": "oklch(0.7 0.12 20)",
-    },
-  },
-  {
-    id: "terracotta-sage",
-    nameEn: "Terracotta & Sage",
-    nameTh: "ดินเผาเซจ",
-    swatch: ["#f5ede4", "#e8a87c", "#87a878", "#4a6741"],
-    vars: {
-      "--background": "oklch(0.96 0.018 70)",
-      "--foreground": "oklch(0.3 0.04 50)",
-      "--card": "oklch(0.99 0.008 70)",
-      "--card-foreground": "oklch(0.3 0.04 50)",
-      "--popover": "oklch(0.99 0.008 70)",
-      "--popover-foreground": "oklch(0.3 0.04 50)",
-      "--primary": "oklch(0.6 0.1 40)",
-      "--primary-foreground": "oklch(0.98 0.008 70)",
-      "--secondary": "oklch(0.92 0.025 70)",
-      "--secondary-foreground": "oklch(0.32 0.04 50)",
-      "--muted": "oklch(0.92 0.02 70)",
-      "--muted-foreground": "oklch(0.5 0.03 60)",
-      "--accent": "oklch(0.9 0.035 60)",
-      "--accent-foreground": "oklch(0.3 0.04 50)",
-      "--border": "oklch(0.87 0.025 65)",
-      "--input": "oklch(0.87 0.025 65)",
-      "--ring": "oklch(0.7 0.06 50)",
-      "--income": "oklch(0.62 0.08 145)",
-      "--expense": "oklch(0.62 0.1 30)",
-    },
-  },
-  {
-    id: "arctic-frost",
-    nameEn: "Arctic Frost",
-    nameTh: "น้ำแข็งอาร์กติก",
-    swatch: ["#e8f0f8", "#cfe0ee", "#6ba3c8", "#2e6b8a"],
-    vars: {
-      "--background": "oklch(0.97 0.01 230)",
-      "--foreground": "oklch(0.28 0.03 235)",
-      "--card": "oklch(0.99 0.005 230)",
-      "--card-foreground": "oklch(0.28 0.03 235)",
-      "--popover": "oklch(0.99 0.005 230)",
-      "--popover-foreground": "oklch(0.28 0.03 235)",
-      "--primary": "oklch(0.55 0.08 230)",
-      "--primary-foreground": "oklch(0.99 0 0)",
-      "--secondary": "oklch(0.93 0.018 230)",
-      "--secondary-foreground": "oklch(0.32 0.03 235)",
-      "--muted": "oklch(0.93 0.015 230)",
-      "--muted-foreground": "oklch(0.5 0.025 230)",
-      "--accent": "oklch(0.9 0.025 220)",
-      "--accent-foreground": "oklch(0.3 0.03 235)",
-      "--border": "oklch(0.88 0.02 230)",
-      "--input": "oklch(0.88 0.02 230)",
-      "--ring": "oklch(0.7 0.04 230)",
-      "--income": "oklch(0.72 0.08 155)",
-      "--expense": "oklch(0.65 0.09 25)",
-    },
-  },
-  {
-    id: "cherry-blossom",
-    nameEn: "Cherry Blossom",
-    nameTh: "ซากุระ",
-    swatch: ["#fef0f5", "#f8c8d8", "#e88aab", "#a85c7c"],
-    vars: {
-      "--background": "oklch(0.975 0.01 0)",
-      "--foreground": "oklch(0.3 0.04 0)",
-      "--card": "oklch(0.99 0.005 0)",
-      "--card-foreground": "oklch(0.3 0.04 0)",
-      "--popover": "oklch(0.99 0.005 0)",
-      "--popover-foreground": "oklch(0.3 0.04 0)",
-      "--primary": "oklch(0.6 0.1 0)",
-      "--primary-foreground": "oklch(0.99 0 0)",
-      "--secondary": "oklch(0.93 0.02 0)",
-      "--secondary-foreground": "oklch(0.32 0.04 0)",
-      "--muted": "oklch(0.93 0.018 0)",
-      "--muted-foreground": "oklch(0.5 0.03 0)",
-      "--accent": "oklch(0.9 0.03 0)",
-      "--accent-foreground": "oklch(0.32 0.04 0)",
-      "--border": "oklch(0.88 0.022 0)",
-      "--input": "oklch(0.88 0.022 0)",
-      "--ring": "oklch(0.7 0.05 0)",
-      "--income": "oklch(0.7 0.08 150)",
-      "--expense": "oklch(0.62 0.1 25)",
+    darkVars: {
+      "--background": "oklch(0.14 0.02 10)",
+      "--foreground": "oklch(0.93 0.01 10)",
+      "--card": "oklch(0.19 0.025 10)",
+      "--card-foreground": "oklch(0.93 0.01 10)",
+      "--popover": "oklch(0.19 0.025 10)",
+      "--popover-foreground": "oklch(0.93 0.01 10)",
+      "--primary": "oklch(0.65 0.23 10)",
+      "--primary-foreground": "oklch(0.14 0.02 10)",
+      "--secondary": "oklch(0.26 0.03 10)",
+      "--secondary-foreground": "oklch(0.93 0.01 10)",
+      "--muted": "oklch(0.26 0.025 10)",
+      "--muted-foreground": "oklch(0.65 0.02 10)",
+      "--accent": "oklch(0.3 0.04 10)",
+      "--accent-foreground": "oklch(0.93 0.01 10)",
+      "--border": "oklch(0.3 0.03 10)",
+      "--input": "oklch(0.3 0.03 10)",
+      "--ring": "oklch(0.58 0.18 10)",
+      "--income": "oklch(0.72 0.16 160)",
+      "--expense": "oklch(0.7 0.22 10)",
     },
   },
 ];
@@ -405,6 +280,8 @@ interface StoreCtx {
   deleteTransaction: (id: string) => void;
   theme: string;
   setTheme: (id: string) => void;
+  darkMode: boolean;
+  setDarkMode: (v: boolean) => void;
   lang: Lang;
   setLang: (l: Lang) => void;
   t: (typeof translations)["en"] | (typeof translations)["th"];
@@ -419,21 +296,24 @@ const Ctx = createContext<StoreCtx | null>(null);
 const LS = {
   tx: "et.transactions",
   theme: "et.theme",
+  darkMode: "et.darkMode",
   lang: "et.lang",
   wallpaper: "et.wallpaper",
   currency: "et.currency",
 };
 
-function applyTheme(themeId: string) {
+function applyTheme(themeId: string, darkMode: boolean) {
   const preset = THEME_PRESETS.find((p) => p.id === themeId) ?? THEME_PRESETS[0];
   const root = document.documentElement;
-  root.classList.toggle("dark", preset.id === "midnight");
-  Object.entries(preset.vars).forEach(([k, v]) => root.style.setProperty(k, v));
+  root.classList.toggle("dark", darkMode);
+  const vars = darkMode ? preset.darkVars : preset.lightVars;
+  Object.entries(vars).forEach(([k, v]) => root.style.setProperty(k, v));
 }
 
 export function ExpenseProvider({ children }: { children: ReactNode }) {
   const [transactions, setTransactions] = useState<Transaction[]>([]);
-  const [theme, setThemeState] = useState<string>("warm-sand");
+  const [theme, setThemeState] = useState<string>("blue");
+  const [darkMode, setDarkModeState] = useState<boolean>(false);
   const [lang, setLangState] = useState<Lang>("en");
   const [wallpaper, setWallpaperState] = useState<string | null>(null);
   const [currency, setCurrencyState] = useState<CurrencyCode>("THB");
@@ -444,7 +324,9 @@ export function ExpenseProvider({ children }: { children: ReactNode }) {
       const tx = localStorage.getItem(LS.tx);
       if (tx) setTransactions(JSON.parse(tx));
       const th = localStorage.getItem(LS.theme);
-      if (th) setThemeState(th);
+      if (th && THEME_PRESETS.some((p) => p.id === th)) setThemeState(th);
+      const dm = localStorage.getItem(LS.darkMode);
+      if (dm !== null) setDarkModeState(dm === "true");
       const lg = localStorage.getItem(LS.lang) as Lang | null;
       if (lg === "th" || lg === "en") setLangState(lg);
       const wp = localStorage.getItem(LS.wallpaper);
@@ -456,8 +338,8 @@ export function ExpenseProvider({ children }: { children: ReactNode }) {
   }, []);
 
   useEffect(() => {
-    if (hydrated) applyTheme(theme);
-  }, [theme, hydrated]);
+    if (hydrated) applyTheme(theme, darkMode);
+  }, [theme, darkMode, hydrated]);
 
   useEffect(() => {
     if (hydrated) localStorage.setItem(LS.tx, JSON.stringify(transactions));
@@ -476,6 +358,10 @@ export function ExpenseProvider({ children }: { children: ReactNode }) {
   const setTheme = (id: string) => {
     setThemeState(id);
     localStorage.setItem(LS.theme, id);
+  };
+  const setDarkMode = (v: boolean) => {
+    setDarkModeState(v);
+    localStorage.setItem(LS.darkMode, String(v));
   };
   const setLang = (l: Lang) => {
     setLangState(l);
@@ -500,6 +386,8 @@ export function ExpenseProvider({ children }: { children: ReactNode }) {
         deleteTransaction,
         theme,
         setTheme,
+        darkMode,
+        setDarkMode,
         lang,
         setLang,
         t: translations[lang],

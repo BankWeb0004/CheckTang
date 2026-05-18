@@ -9,12 +9,23 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Check, Upload, X } from "lucide-react";
+import { Check, Upload, X, Sun, Moon } from "lucide-react";
 import { toast } from "sonner";
 
 export function Settings() {
-  const { theme, setTheme, lang, setLang, t, wallpaper, setWallpaper, currency, setCurrency } =
-    useStore();
+  const {
+    theme,
+    setTheme,
+    darkMode,
+    setDarkMode,
+    lang,
+    setLang,
+    t,
+    wallpaper,
+    setWallpaper,
+    currency,
+    setCurrency,
+  } = useStore();
   const fileRef = useRef<HTMLInputElement>(null);
 
   const onUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -31,8 +42,9 @@ export function Settings() {
 
   return (
     <div className="space-y-5">
+      {/* Language */}
       <Card className="card-soft p-5">
-        <div className="text-sm font-medium mb-3">{t.language}</div>
+        <div className="text-sm font-medium mb-3 text-foreground">{t.language}</div>
         <div className="grid grid-cols-2 p-1 rounded-2xl bg-muted">
           {(["en", "th"] as Lang[]).map((l) => (
             <button
@@ -51,8 +63,9 @@ export function Settings() {
         </div>
       </Card>
 
+      {/* Currency */}
       <Card className="card-soft p-5">
-        <div className="text-sm font-medium mb-3">
+        <div className="text-sm font-medium mb-3 text-foreground">
           {lang === "th" ? "สกุลเงิน" : "Currency"}
         </div>
         <Select value={currency} onValueChange={(v) => setCurrency(v as CurrencyCode)}>
@@ -69,44 +82,88 @@ export function Settings() {
         </Select>
       </Card>
 
+      {/* Accent Color */}
       <Card className="card-soft p-5">
-        <div className="text-sm font-medium mb-3">{t.theme}</div>
-        <div className="grid grid-cols-2 gap-2.5">
+        <div className="text-sm font-medium mb-5 text-foreground">
+          {lang === "th" ? "สีหลัก" : "Accent Color"}
+        </div>
+        <div className="flex gap-6 justify-center">
           {THEME_PRESETS.map((p) => {
             const active = theme === p.id;
             return (
               <button
                 key={p.id}
                 onClick={() => setTheme(p.id)}
-                className="relative p-3 rounded-2xl text-left border transition-all"
-                style={{
-                  borderColor: active ? "var(--ring)" : "var(--border)",
-                  background: "var(--card)",
-                }}
+                className="flex flex-col items-center gap-2.5"
+                aria-label={lang === "th" ? p.nameTh : p.nameEn}
               >
-                <div className="flex gap-1 mb-2">
-                  {p.swatch.map((c, i) => (
-                    <span
-                      key={i}
-                      className="h-5 w-5 rounded-md border border-border/50"
-                      style={{ background: c }}
+                <div
+                  className="relative h-12 w-12 rounded-full transition-all duration-200 flex items-center justify-center"
+                  style={{
+                    background: p.accentColor,
+                    outline: active ? `3px solid var(--foreground)` : "3px solid transparent",
+                    outlineOffset: "2px",
+                    boxShadow: "0 3px 10px rgba(0,0,0,0.18)",
+                    transform: active ? "scale(1.12)" : "scale(1)",
+                  }}
+                >
+                  {active && (
+                    <Check
+                      className="h-5 w-5"
+                      style={{ color: "#fff", filter: "drop-shadow(0 1px 2px rgba(0,0,0,0.5))" }}
                     />
-                  ))}
+                  )}
                 </div>
-                <div className="flex items-center justify-between">
-                  <span className="text-xs font-medium truncate">
-                    {lang === "th" ? p.nameTh : p.nameEn}
-                  </span>
-                  {active && <Check className="h-3.5 w-3.5 text-primary flex-shrink-0" />}
-                </div>
+                <span
+                  className="text-xs font-medium text-center leading-tight max-w-[60px]"
+                  style={{
+                    color: active ? "var(--foreground)" : "var(--muted-foreground)",
+                  }}
+                >
+                  {lang === "th" ? p.nameTh : p.nameEn}
+                </span>
               </button>
             );
           })}
         </div>
       </Card>
 
+      {/* Display Mode */}
       <Card className="card-soft p-5">
-        <div className="text-sm font-medium mb-3">{t.wallpaper}</div>
+        <div className="text-sm font-medium mb-3 text-foreground">
+          {lang === "th" ? "โหมดสี" : "Display Mode"}
+        </div>
+        <div className="grid grid-cols-2 p-1 rounded-2xl bg-muted gap-1">
+          <button
+            onClick={() => setDarkMode(false)}
+            className="flex items-center justify-center gap-2 py-2.5 rounded-xl text-sm font-medium transition-all duration-200"
+            style={{
+              background: !darkMode ? "var(--card)" : "transparent",
+              color: !darkMode ? "var(--foreground)" : "var(--muted-foreground)",
+              boxShadow: !darkMode ? "0 1px 3px rgba(0,0,0,0.08)" : "none",
+            }}
+          >
+            <Sun className="h-4 w-4" />
+            {lang === "th" ? "สว่าง" : "Light"}
+          </button>
+          <button
+            onClick={() => setDarkMode(true)}
+            className="flex items-center justify-center gap-2 py-2.5 rounded-xl text-sm font-medium transition-all duration-200"
+            style={{
+              background: darkMode ? "var(--card)" : "transparent",
+              color: darkMode ? "var(--foreground)" : "var(--muted-foreground)",
+              boxShadow: darkMode ? "0 1px 3px rgba(0,0,0,0.08)" : "none",
+            }}
+          >
+            <Moon className="h-4 w-4" />
+            {lang === "th" ? "มืด" : "Dark"}
+          </button>
+        </div>
+      </Card>
+
+      {/* Wallpaper */}
+      <Card className="card-soft p-5">
+        <div className="text-sm font-medium mb-3 text-foreground">{t.wallpaper}</div>
         {wallpaper ? (
           <div className="space-y-3">
             <div
@@ -139,18 +196,17 @@ export function Settings() {
         />
       </Card>
 
+      {/* About */}
       <Card className="card-soft p-5">
-        <div className="text-sm font-medium mb-4">
+        <div className="text-sm font-medium mb-4 text-foreground">
           {lang === "th" ? "เกี่ยวกับแอปพลิเคชัน" : "About Application"}
         </div>
         <div className="flex flex-col items-center gap-2 py-2">
-          <span className="text-xl font-bold text-foreground">
-            เช็คตังค์
-          </span>
-          <span className="text-xs font-semibold tracking-widest text-muted-foreground dark:text-foreground uppercase">
+          <span className="text-xl font-bold text-foreground">เช็คตังค์</span>
+          <span className="text-xs font-semibold tracking-widest uppercase text-muted-foreground">
             DEV BY BANK
           </span>
-          <span className="text-xs text-muted-foreground dark:text-foreground mt-1">v1.2.1</span>
+          <span className="text-xs text-muted-foreground mt-1">v1.2.1</span>
         </div>
       </Card>
     </div>

@@ -6,12 +6,12 @@ import { ArrowDownLeft, ArrowUpRight, Wallet } from "lucide-react";
 import { CheckTangLogo } from "@/components/expense/CheckTangLogo";
 
 const CHART_COLORS = [
-  "oklch(0.72 0.07 30)",
-  "oklch(0.72 0.07 90)",
-  "oklch(0.72 0.07 150)",
-  "oklch(0.72 0.07 220)",
-  "oklch(0.72 0.07 280)",
-  "oklch(0.72 0.07 340)",
+  "oklch(0.65 0.18 30)",
+  "oklch(0.68 0.16 90)",
+  "oklch(0.65 0.18 155)",
+  "oklch(0.62 0.18 220)",
+  "oklch(0.65 0.16 280)",
+  "oklch(0.65 0.18 340)",
 ];
 
 export function Dashboard() {
@@ -49,7 +49,7 @@ export function Dashboard() {
   return (
     <div className="space-y-4">
       <div className="flex items-center justify-between gap-3">
-        <p className="text-[0.72rem] font-medium tracking-[0.08em] text-muted-foreground dark:text-foreground">
+        <p className="text-[0.72rem] font-medium tracking-[0.08em] text-foreground">
           {dateLabel}
         </p>
         <div className="flex items-center gap-3">
@@ -58,7 +58,7 @@ export function Dashboard() {
             <span className="text-sm font-semibold leading-none text-foreground">
               เช็คตังค์
             </span>
-            <span className="text-[0.68rem] uppercase tracking-[0.25em] text-muted-foreground dark:text-foreground">
+            <span className="text-[0.68rem] uppercase tracking-[0.25em] text-foreground opacity-70">
               CHECK TANG
             </span>
           </div>
@@ -66,17 +66,17 @@ export function Dashboard() {
       </div>
 
       <Card className="card-soft p-6">
-        <div className="flex items-center gap-2 text-muted-foreground text-sm">
+        <div className="flex items-center gap-2 text-sm" style={{ color: "var(--muted-foreground)" }}>
           <Wallet className="h-4 w-4" />
           <span>{t.balance}</span>
         </div>
         <div
-          className="mt-2 text-4xl font-semibold tracking-tight"
-          style={{ color: balanceNegative ? "var(--expense)" : undefined }}
+          className="mt-2 text-4xl font-semibold tracking-tight text-foreground"
+          style={{ color: balanceNegative ? "var(--expense)" : "var(--foreground)" }}
         >
           {formatCurrency(balance, lang, currency)}
         </div>
-        <div className="mt-1 text-xs text-muted-foreground">{t.thisMonth}</div>
+        <div className="mt-1 text-xs" style={{ color: "var(--muted-foreground)" }}>{t.thisMonth}</div>
       </Card>
 
       <div className="grid grid-cols-2 gap-3">
@@ -101,7 +101,7 @@ export function Dashboard() {
       </div>
 
       <Card className="card-soft p-5">
-        <div className="text-sm font-medium mb-4">{t.expensesByCategory}</div>
+        <div className="text-sm font-medium mb-4 text-foreground">{t.expensesByCategory}</div>
         {byCategory.length === 0 ? (
           <div className="h-48 flex items-center justify-center text-sm text-muted-foreground">
             {t.noData}
@@ -142,11 +142,11 @@ export function Dashboard() {
                 </PieChart>
               </ResponsiveContainer>
             </div>
-            <div className="flex flex-wrap gap-3 justify-center mt-3 pb-2 text-foreground">
+            <div className="flex flex-wrap gap-3 justify-center mt-3 pb-2">
               {byCategory.map((c, i) => (
-                <div key={c.name} className="flex items-center gap-1.5 text-xs">
+                <div key={c.name} className="flex items-center gap-1.5 text-xs text-foreground">
                   <span
-                    className="h-2.5 w-2.5 rounded-full"
+                    className="h-2.5 w-2.5 rounded-full flex-shrink-0"
                     style={{ background: CHART_COLORS[i % CHART_COLORS.length] }}
                   />
                   {t.categories[c.name as keyof typeof t.categories] ?? c.name}
