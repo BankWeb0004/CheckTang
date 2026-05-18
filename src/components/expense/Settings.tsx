@@ -144,10 +144,7 @@ export function Settings() {
           {lang === "th" ? "เกี่ยวกับแอปพลิเคชัน" : "About Application"}
         </div>
         <div className="flex flex-col items-center gap-2 py-2">
-          <span
-            className="text-xl font-bold"
-            style={{ color: "oklch(0.28 0.06 240)" }}
-          >
+          <span className="text-xl font-bold text-slate-900 dark:text-white">
             เช็คตังค์
           </span>
           <span className="text-xs font-semibold tracking-widest text-muted-foreground uppercase">
