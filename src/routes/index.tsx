@@ -71,18 +71,7 @@ function AppShell() {
     >
       {wallpaper && <div className="fixed inset-0 wallpaper-overlay pointer-events-none" />}
 
-      <div className="relative max-w-md mx-auto px-5 pt-8 pb-32">
-        <header className="mb-6 flex items-center justify-between">
-          <div>
-            <h1 className="text-xl font-semibold tracking-tight">{t.appName}</h1>
-            <p className="text-xs text-muted-foreground mt-0.5">
-              {tab === "dashboard" && t.thisMonth}
-              {tab === "history" && t.recent}
-              {tab === "settings" && t.settings}
-            </p>
-          </div>
-        </header>
-
+      <div className="relative max-w-md mx-auto px-5 pt-4 pb-32">
         <main>
           {tab === "dashboard" && <Dashboard />}
           {tab === "history" && <History />}
