@@ -49,7 +49,7 @@ export function Dashboard() {
   return (
     <div className="space-y-4">
       <div className="flex items-center justify-between gap-3">
-        <p className="text-[0.72rem] font-medium tracking-[0.08em] text-slate-600 dark:text-slate-300">
+        <p className="text-[0.72rem] font-medium tracking-[0.08em] text-slate-600 dark:text-white">
           {dateLabel}
         </p>
         <div className="flex items-center gap-3">
@@ -58,7 +58,7 @@ export function Dashboard() {
             <span className="text-sm font-semibold leading-none text-slate-900 dark:text-white">
               เช็คตังค์
             </span>
-            <span className="text-[0.68rem] uppercase tracking-[0.25em] text-slate-600 dark:text-slate-200">
+            <span className="text-[0.68rem] uppercase tracking-[0.25em] text-slate-600 dark:text-white">
               CHECK TANG
             </span>
           </div>
@@ -142,7 +142,7 @@ export function Dashboard() {
                 </PieChart>
               </ResponsiveContainer>
             </div>
-            <div className="flex flex-wrap gap-3 justify-center mt-3 pb-2 text-slate-900 dark:text-slate-200">
+            <div className="flex flex-wrap gap-3 justify-center mt-3 pb-2 text-slate-900 dark:text-white">
               {byCategory.map((c, i) => (
                 <div key={c.name} className="flex items-center gap-1.5 text-xs">
                   <span
