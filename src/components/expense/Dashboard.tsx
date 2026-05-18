@@ -53,7 +53,7 @@ export function Dashboard() {
           {dateLabel}
         </p>
         <div className="flex items-center gap-3">
-          <CheckTangLogo className="text-slate-900 dark:text-slate-100" showLabel={false} />
+          <CheckTangLogo className="text-slate-900 dark:text-white" showLabel={false} />
           <div className="flex flex-col items-end gap-0.5 text-right">
             <span className="text-sm font-semibold leading-none text-slate-900 dark:text-slate-100">
               เช็คตังค์
