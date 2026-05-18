@@ -144,13 +144,13 @@ export function Settings() {
           {lang === "th" ? "เกี่ยวกับแอปพลิเคชัน" : "About Application"}
         </div>
         <div className="flex flex-col items-center gap-2 py-2">
-          <span className="text-xl font-bold text-slate-900 dark:text-white">
+          <span className="text-xl font-bold text-foreground">
             เช็คตังค์
           </span>
-          <span className="text-xs font-semibold tracking-widest text-muted-foreground uppercase">
+          <span className="text-xs font-semibold tracking-widest text-muted-foreground dark:text-foreground uppercase">
             DEV BY BANK
           </span>
-          <span className="text-xs text-muted-foreground mt-1">v1.2.1</span>
+          <span className="text-xs text-muted-foreground dark:text-foreground mt-1">v1.2.1</span>
         </div>
       </Card>
     </div>

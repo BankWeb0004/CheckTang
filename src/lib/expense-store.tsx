@@ -427,6 +427,7 @@ const LS = {
 function applyTheme(themeId: string) {
   const preset = THEME_PRESETS.find((p) => p.id === themeId) ?? THEME_PRESETS[0];
   const root = document.documentElement;
+  root.classList.toggle("dark", preset.id === "midnight");
   Object.entries(preset.vars).forEach(([k, v]) => root.style.setProperty(k, v));
 }
 
