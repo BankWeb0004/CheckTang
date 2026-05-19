@@ -46,7 +46,7 @@ export const Route = createFileRoute("/")({
 type Tab = "dashboard" | "history" | "settings";
 
 function AppShell() {
-  const { t, wallpaper } = useStore();
+  const { t, wallpaper, showTutorial, closeTutorial } = useStore();
   const [tab, setTab] = useState<Tab>("dashboard");
   const [sheetOpen, setSheetOpen] = useState(false);
   const [editTransaction, setEditTransaction] = useState<Transaction | null>(null);
