@@ -135,6 +135,7 @@ function AppShell() {
         editTransaction={editTransaction}
       />
       <Toaster />
+      <Tutorial open={showTutorial} onClose={() => closeTutorial(true)} />
     </div>
   );
 }
