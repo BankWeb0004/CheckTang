@@ -595,7 +595,7 @@ export function formatCurrency(n: number, lang: Lang, currency: CurrencyCode = "
 // Helper to display a category label (default key → translated, custom → as-is)
 export function getCategoryLabel(
   category: string,
-  tCategories: (typeof translations)["en"]["categories"]
+  tCategories: Readonly<Record<string, string>>
 ): string {
-  return (tCategories as Record<string, string>)[category] ?? category;
+  return tCategories[category] ?? category;
 }
