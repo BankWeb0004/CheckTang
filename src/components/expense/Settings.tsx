@@ -197,6 +197,21 @@ export function Settings() {
         />
       </Card>
 
+      {/* Tutorial */}
+      <Card className="card-soft p-2">
+        <button
+          onClick={openTutorial}
+          className="w-full flex items-center gap-3 p-2 rounded-xl hover:bg-muted/60 transition-colors text-left"
+        >
+          <div className="h-10 w-10 rounded-xl bg-primary/10 flex items-center justify-center text-primary">
+            <BookOpen className="h-5 w-5" />
+          </div>
+          <span className="text-sm font-medium text-foreground flex-1">
+            {t.viewTutorial}
+          </span>
+        </button>
+      </Card>
+
       {/* About */}
       <Card className="card-soft p-3">
         <div className="flex items-center justify-between gap-3">
