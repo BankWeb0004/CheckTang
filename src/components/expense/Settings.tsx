@@ -25,6 +25,7 @@ export function Settings() {
     setWallpaper,
     currency,
     setCurrency,
+    openTutorial,
   } = useStore();
   const fileRef = useRef<HTMLInputElement>(null);
 
