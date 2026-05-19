@@ -9,7 +9,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Check, Upload, X, Sun, Moon } from "lucide-react";
+import { Check, Upload, X, Sun, Moon, BookOpen } from "lucide-react";
 import { toast } from "sonner";
 
 export function Settings() {
