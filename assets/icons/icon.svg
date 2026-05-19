@@ -1,0 +1,30 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1024 1024" fill="none">
+  <defs>
+    <radialGradient id="bgGradient" cx="50%" cy="50%" r="70%">
+      <stop offset="0%" stop-color="#101826" />
+      <stop offset="100%" stop-color="#050811" />
+    </radialGradient>
+    <linearGradient id="neonGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#4EF1FF" />
+      <stop offset="50%" stop-color="#28A6FF" />
+      <stop offset="100%" stop-color="#6DF9FF" />
+    </linearGradient>
+    <filter id="glow" x="-250%" y="-250%" width="500%" height="500%">
+      <feGaussianBlur stdDeviation="22" result="blur" />
+      <feMerge>
+        <feMergeNode in="blur" />
+        <feMergeNode in="SourceGraphic" />
+      </feMerge>
+    </filter>
+  </defs>
+  <rect width="1024" height="1024" rx="224" fill="url(#bgGradient)" />
+  <rect x="96" y="96" width="832" height="832" rx="208" fill="#0d1323" opacity="0.96" />
+  <g filter="url(#glow)">
+    <circle cx="512" cy="512" r="250" fill="none" stroke="url(#neonGradient)" stroke-width="60" stroke-linecap="round" />
+    <circle cx="726" cy="286" r="70" fill="none" stroke="url(#neonGradient)" stroke-width="30" />
+    <circle cx="500" cy="216" r="24" fill="#5CF5FF" />
+    <path d="M356 360C396 260 556 240 616 320" stroke="url(#neonGradient)" stroke-width="24" stroke-linecap="round" fill="none" opacity="0.9" />
+  </g>
+  <circle cx="512" cy="512" r="316" stroke="#163053" stroke-width="12" opacity="0.2" />
+</svg>
