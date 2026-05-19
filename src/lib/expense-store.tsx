@@ -1,4 +1,4 @@
-import { createContext, useContext, useEffect, useState, ReactNode } from "react";
+import { createContext, useContext, useEffect, useState, ReactNode, useCallback } from "react";
 
 export type TxType = "income" | "expense";
 export type Lang = "en" | "th";
@@ -19,7 +19,7 @@ export interface Transaction {
   category: string;
   method: string;
   note: string;
-  date: string; // ISO date (yyyy-mm-dd)
+  date: string;
   createdAt: number;
 }
 
@@ -32,7 +32,6 @@ export interface ThemePreset {
   darkVars: Record<string, string>;
 }
 
-// 3 accent palettes × light/dark base = clean, user-configurable system
 export const THEME_PRESETS: ThemePreset[] = [
   {
     id: "blue",
@@ -180,6 +179,13 @@ export const THEME_PRESETS: ThemePreset[] = [
   },
 ];
 
+// Default category keys split by transaction type
+export const EXPENSE_CATEGORY_KEYS = ["Food", "Transport", "Shopping", "Housing", "Entertainment"] as const;
+export const INCOME_CATEGORY_KEYS = ["Salary", "SideIncome", "Bonus", "Investment"] as const;
+// Legacy export for back-compat (kept so other imports don't break)
+export const CATEGORY_KEYS = [...EXPENSE_CATEGORY_KEYS, ...INCOME_CATEGORY_KEYS] as const;
+export const METHOD_KEYS = ["Cash", "Bank", "Card"] as const;
+
 export const translations = {
   en: {
     appName: "เช็คตังค์",
@@ -197,6 +203,11 @@ export const translations = {
     addTransaction: "Add Transaction",
     amount: "Amount",
     category: "Category",
+    selectCategory: "Select Category",
+    addNewCategory: "Add new category",
+    newCategoryPrompt: "Enter the new category name",
+    newCategoryPlaceholder: "Category name",
+    categoryRequired: "Please select a category before saving",
     paymentMethod: "Payment Method",
     note: "Note",
     date: "Date",
@@ -218,12 +229,35 @@ export const translations = {
     addAnother: "Add another",
     itemCount: "items",
     amountRequired: "Please enter an amount greater than zero",
+    viewTutorial: "View Tutorial Guide",
+    tutorial: {
+      skip: "Skip",
+      next: "Next",
+      back: "Back",
+      getStarted: "Get Started",
+      s1Title: "Welcome to CheckTang!",
+      s1Body: "The simplest way to track your daily expenses and income.",
+      s2Title: "Smart Input",
+      s2Body:
+        "Our dynamic number pad with auto-comma and cash/transfer tags makes logging transactions lightning fast.",
+      s3Title: "Beautiful Summaries",
+      s3Body:
+        "Instantly see where your money goes on your clean, simplified financial dashboard.",
+      s4Title: "You're all set!",
+      s4Body:
+        "Take control of your money today. Let's start tracking together!",
+    },
     categories: {
       Food: "Food",
       Transport: "Transport",
-      Utilities: "Utilities",
       Shopping: "Shopping",
+      Housing: "Housing",
+      Entertainment: "Entertainment",
       Salary: "Salary",
+      SideIncome: "Side Income",
+      Bonus: "Bonus",
+      Investment: "Investment",
+      Utilities: "Utilities",
       Other: "Other",
     },
     methods: { Cash: "Cash", Bank: "Bank", Card: "Card" },
@@ -244,6 +278,11 @@ export const translations = {
     addTransaction: "เพิ่มรายการ",
     amount: "จำนวนเงิน",
     category: "หมวดหมู่",
+    selectCategory: "เลือกหมวดหมู่",
+    addNewCategory: "เพิ่มหมวดหมู่ใหม่",
+    newCategoryPrompt: "ตั้งชื่อหมวดหมู่ใหม่",
+    newCategoryPlaceholder: "ชื่อหมวดหมู่",
+    categoryRequired: "กรุณาเลือกหมวดหมู่ก่อนบันทึก",
     paymentMethod: "ช่องทางจ่าย",
     note: "บันทึก",
     date: "วันที่",
@@ -265,20 +304,45 @@ export const translations = {
     addAnother: "เพิ่มอีก",
     itemCount: "รายการ",
     amountRequired: "กรุณากรอกจำนวนเงินที่มากกว่าศูนย์",
+    viewTutorial: "ดูคู่มือการใช้งานอีกครั้ง",
+    tutorial: {
+      skip: "ข้าม",
+      next: "ถัดไป",
+      back: "ย้อนกลับ",
+      getStarted: "เริ่มใช้งาน",
+      s1Title: "ยินดีต้อนรับสู่ เช็คตังค์!",
+      s1Body: "วิธีที่ง่ายที่สุดในการบันทึกรายรับ-รายจ่ายประจำวันของคุณ",
+      s2Title: "บันทึกอัจฉริยะ",
+      s2Body:
+        "ปุ่มตัวเลขแบบไดนามิกพร้อมจุลภาคอัตโนมัติและแท็กเงินสด/โอน ช่วยให้บันทึกได้รวดเร็วทันใจ",
+      s3Title: "สรุปสวยเข้าใจง่าย",
+      s3Body:
+        "ดูได้ทันทีว่าเงินของคุณไปไหนบนแดชบอร์ดการเงินที่สะอาดและเรียบง่าย",
+      s4Title: "พร้อมแล้ว!",
+      s4Body:
+        "ควบคุมการเงินของคุณตั้งแต่วันนี้ มาเริ่มบันทึกไปด้วยกัน!",
+    },
     categories: {
       Food: "อาหาร",
       Transport: "เดินทาง",
-      Utilities: "ค่าสาธารณูปโภค",
       Shopping: "ช้อปปิ้ง",
+      Housing: "ที่อยู่อาศัย",
+      Entertainment: "บันเทิง",
       Salary: "เงินเดือน",
+      SideIncome: "รายได้เสริม",
+      Bonus: "โบนัส",
+      Investment: "การลงทุน",
+      Utilities: "ค่าสาธารณูปโภค",
       Other: "อื่นๆ",
     },
     methods: { Cash: "เงินสด", Bank: "ธนาคาร", Card: "บัตร" },
   },
 } as const;
 
-export const CATEGORY_KEYS = ["Food", "Transport", "Utilities", "Shopping", "Salary", "Other"] as const;
-export const METHOD_KEYS = ["Cash", "Bank", "Card"] as const;
+export interface CustomCategories {
+  income: string[];
+  expense: string[];
+}
 
 interface StoreCtx {
   transactions: Transaction[];
@@ -297,6 +361,14 @@ interface StoreCtx {
   setWallpaper: (w: string | null) => void;
   currency: CurrencyCode;
   setCurrency: (c: CurrencyCode) => void;
+  customCategories: CustomCategories;
+  addCustomCategory: (type: TxType, name: string) => boolean;
+  getCategoriesFor: (type: TxType) => string[];
+  hasSeenTutorial: boolean;
+  setHasSeenTutorial: (v: boolean) => void;
+  showTutorial: boolean;
+  openTutorial: () => void;
+  closeTutorial: (markSeen?: boolean) => void;
 }
 
 const Ctx = createContext<StoreCtx | null>(null);
@@ -308,6 +380,8 @@ const LS = {
   lang: "et.lang",
   wallpaper: "et.wallpaper",
   currency: "et.currency",
+  customCats: "et.customCategories",
+  tutorial: "hasSeenTutorial",
 };
 
 function applyTheme(themeId: string, darkMode: boolean) {
@@ -325,6 +399,12 @@ export function ExpenseProvider({ children }: { children: ReactNode }) {
   const [lang, setLangState] = useState<Lang>("en");
   const [wallpaper, setWallpaperState] = useState<string | null>(null);
   const [currency, setCurrencyState] = useState<CurrencyCode>("THB");
+  const [customCategories, setCustomCategories] = useState<CustomCategories>({
+    income: [],
+    expense: [],
+  });
+  const [hasSeenTutorial, setHasSeenTutorialState] = useState<boolean>(true);
+  const [showTutorial, setShowTutorial] = useState<boolean>(false);
   const [hydrated, setHydrated] = useState(false);
 
   useEffect(() => {
@@ -341,6 +421,20 @@ export function ExpenseProvider({ children }: { children: ReactNode }) {
       if (wp) setWallpaperState(wp);
       const cur = localStorage.getItem(LS.currency) as CurrencyCode | null;
       if (cur && CURRENCIES.some((c) => c.code === cur)) setCurrencyState(cur);
+      const cc = localStorage.getItem(LS.customCats);
+      if (cc) {
+        const parsed = JSON.parse(cc);
+        if (parsed && Array.isArray(parsed.income) && Array.isArray(parsed.expense)) {
+          setCustomCategories({
+            income: parsed.income.filter((s: unknown) => typeof s === "string"),
+            expense: parsed.expense.filter((s: unknown) => typeof s === "string"),
+          });
+        }
+      }
+      const seen = localStorage.getItem(LS.tutorial);
+      const seenBool = seen === "true";
+      setHasSeenTutorialState(seenBool);
+      if (!seenBool) setShowTutorial(true);
     } catch {}
     setHydrated(true);
   }, []);
@@ -352,6 +446,10 @@ export function ExpenseProvider({ children }: { children: ReactNode }) {
   useEffect(() => {
     if (hydrated) localStorage.setItem(LS.tx, JSON.stringify(transactions));
   }, [transactions, hydrated]);
+
+  useEffect(() => {
+    if (hydrated) localStorage.setItem(LS.customCats, JSON.stringify(customCategories));
+  }, [customCategories, hydrated]);
 
   const addTransaction: StoreCtx["addTransaction"] = (t) => {
     setTransactions((prev) => [
@@ -397,10 +495,48 @@ export function ExpenseProvider({ children }: { children: ReactNode }) {
     if (w) localStorage.setItem(LS.wallpaper, w);
     else localStorage.removeItem(LS.wallpaper);
   };
-
   const setCurrency = (c: CurrencyCode) => {
     setCurrencyState(c);
     localStorage.setItem(LS.currency, c);
+  };
+
+  const getCategoriesFor = useCallback(
+    (type: TxType): string[] => {
+      const defaults =
+        type === "expense" ? [...EXPENSE_CATEGORY_KEYS] : [...INCOME_CATEGORY_KEYS];
+      const customs = type === "expense" ? customCategories.expense : customCategories.income;
+      // Deduplicate while preserving order
+      const seen = new Set<string>();
+      return [...defaults, ...customs].filter((c) => {
+        if (seen.has(c)) return false;
+        seen.add(c);
+        return true;
+      });
+    },
+    [customCategories]
+  );
+
+  const addCustomCategory: StoreCtx["addCustomCategory"] = (type, rawName) => {
+    const name = rawName.trim();
+    if (!name || name.length > 40) return false;
+    const list = getCategoriesFor(type);
+    if (list.includes(name)) return false;
+    setCustomCategories((prev) => ({
+      ...prev,
+      [type]: [...prev[type], name],
+    }));
+    return true;
+  };
+
+  const setHasSeenTutorial = (v: boolean) => {
+    setHasSeenTutorialState(v);
+    localStorage.setItem(LS.tutorial, String(v));
+  };
+
+  const openTutorial = () => setShowTutorial(true);
+  const closeTutorial = (markSeen = true) => {
+    setShowTutorial(false);
+    if (markSeen) setHasSeenTutorial(true);
   };
 
   return (
@@ -422,6 +558,14 @@ export function ExpenseProvider({ children }: { children: ReactNode }) {
         setWallpaper,
         currency,
         setCurrency,
+        customCategories,
+        addCustomCategory,
+        getCategoriesFor,
+        hasSeenTutorial,
+        setHasSeenTutorial,
+        showTutorial,
+        openTutorial,
+        closeTutorial,
       }}
     >
       {children}
@@ -446,4 +590,12 @@ export function formatCurrency(n: number, lang: Lang, currency: CurrencyCode = "
     maximumFractionDigits: decimals,
   });
   return `${sign}${symbol}${formatted}`;
+}
+
+// Helper to display a category label (default key → translated, custom → as-is)
+export function getCategoryLabel(
+  category: string,
+  tCategories: (typeof translations)["en"]["categories"]
+): string {
+  return (tCategories as Record<string, string>)[category] ?? category;
 }
