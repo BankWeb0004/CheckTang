@@ -9,7 +9,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Check, Upload, X, Sun, Moon } from "lucide-react";
+import { Check, Upload, X, Sun, Moon, BookOpen } from "lucide-react";
 import { toast } from "sonner";
 
 export function Settings() {
@@ -25,6 +25,7 @@ export function Settings() {
     setWallpaper,
     currency,
     setCurrency,
+    openTutorial,
   } = useStore();
   const fileRef = useRef<HTMLInputElement>(null);
 
@@ -194,6 +195,21 @@ export function Settings() {
           className="hidden"
           onChange={onUpload}
         />
+      </Card>
+
+      {/* Tutorial */}
+      <Card className="card-soft p-2">
+        <button
+          onClick={openTutorial}
+          className="w-full flex items-center gap-3 p-2 rounded-xl hover:bg-muted/60 transition-colors text-left"
+        >
+          <div className="h-10 w-10 rounded-xl bg-primary/10 flex items-center justify-center text-primary">
+            <BookOpen className="h-5 w-5" />
+          </div>
+          <span className="text-sm font-medium text-foreground flex-1">
+            {t.viewTutorial}
+          </span>
+        </button>
       </Card>
 
       {/* About */}
