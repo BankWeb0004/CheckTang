@@ -5,6 +5,7 @@ import { Dashboard } from "@/components/expense/Dashboard";
 import { History } from "@/components/expense/History";
 import { Settings } from "@/components/expense/Settings";
 import { AddTransactionSheet } from "@/components/expense/AddTransactionSheet";
+import { Tutorial } from "@/components/expense/Tutorial";
 import { Toaster } from "@/components/ui/sonner";
 import { Hop as Home, ClipboardList, Settings as SettingsIcon, Plus } from "lucide-react";
 
