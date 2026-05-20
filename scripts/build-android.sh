@@ -25,8 +25,7 @@ echo -e "${GREEN}✓ Clean complete${NC}"
 
 # Step 2: Build optimized production bundle with Capacitor configuration
 echo -e "${YELLOW}Step 2: Building optimized production bundle...${NC}"
-export CAPACITOR_BUILD=true
-npm run build
+npm run build:capacitor
 echo -e "${GREEN}✓ Build complete${NC}"
 
 # Step 3: Verify build output
