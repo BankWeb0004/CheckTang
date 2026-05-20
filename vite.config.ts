@@ -151,8 +151,7 @@ export default defineConfig({
         },
         // Register SW before hydration
         registerType: 'prompt',
-        // Don't reload the page automatically
-        autoUpdate: true,
+
       }),
     ],
   },
