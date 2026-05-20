@@ -1,11 +1,27 @@
 /**
  * Service Worker Registration & Update Handler
  * Manages SW registration and notifies the user when updates are available
+ * 
+ * NOTE: Service Workers are disabled in native Capacitor environments
+ * because native WebViews handle caching differently and SW can block asset loading.
  */
+
+import { Capacitor } from '@capacitor/core';
 
 export interface UpdateEvent {
   type: 'SW_UPDATE_AVAILABLE' | 'SW_ACTIVATED' | 'SW_OFFLINE' | 'SW_ONLINE';
   version?: string;
+}
+
+/**
+ * Check if running inside a native Capacitor environment
+ */
+function isNativeApp(): boolean {
+  try {
+    return Capacitor.isNativePlatform();
+  } catch {
+    return false;
+  }
 }
 
 class ServiceWorkerManager {
@@ -16,8 +32,15 @@ class ServiceWorkerManager {
 
   /**
    * Initialize and register the service worker
+   * Skips registration in native Capacitor environments
    */
   async init() {
+    // Skip SW registration in native apps - WebView handles caching differently
+    if (isNativeApp()) {
+      console.log('Service Worker skipped: Running in native Capacitor environment');
+      return;
+    }
+
     if (!('serviceWorker' in navigator)) {
       console.log('Service Workers not supported');
       return;

@@ -31,6 +31,9 @@ function aliasServerOutput() {
   };
 }
 
+// Detect if building for Capacitor (native mobile)
+const isCapacitorBuild = process.env.CAPACITOR_BUILD === 'true';
+
 export default defineConfig({
   tanstackStart: {
     spa: {
@@ -42,6 +45,42 @@ export default defineConfig({
   },
 
   vite: {
+    // Use relative paths for Capacitor builds (file:// protocol compatibility)
+    base: isCapacitorBuild ? './' : '/',
+    
+    // Optimized build configuration
+    build: {
+      // Enable minification for production
+      minify: 'esbuild',
+      // Target modern browsers for smaller bundles
+      target: 'es2020',
+      // Optimize chunk splitting
+      rollupOptions: {
+        output: {
+          // Manual chunk splitting for better caching
+          manualChunks: {
+            'vendor-react': ['react', 'react-dom'],
+            'vendor-router': ['@tanstack/react-router', '@tanstack/react-start'],
+            'vendor-ui': ['@radix-ui/react-dialog', '@radix-ui/react-select', '@radix-ui/react-tabs'],
+            'vendor-charts': ['recharts'],
+          },
+          // Consistent chunk naming
+          chunkFileNames: 'assets/[name]-[hash].js',
+          entryFileNames: 'assets/[name]-[hash].js',
+          assetFileNames: 'assets/[name]-[hash].[ext]',
+        },
+      },
+      // Increase chunk size warning limit
+      chunkSizeWarningLimit: 1000,
+      // Enable source maps only in dev
+      sourcemap: false,
+    },
+    
+    // Optimize dependencies
+    optimizeDeps: {
+      include: ['react', 'react-dom', 'recharts'],
+    },
+    
     plugins: [
       aliasServerOutput(),
       VitePWA({
@@ -54,8 +93,8 @@ export default defineConfig({
         },
         srcDir: 'public',
         filename: 'sw.js',
-        // PWA manifest configuration
-        manifest: {
+        // PWA manifest configuration - only include in web builds
+        manifest: isCapacitorBuild ? false : {
           name: 'CheckTang',
           short_name: 'CheckTang',
           description: 'Expense tracker with offline support',
@@ -172,8 +211,10 @@ export default defineConfig({
           clientsClaim: true,
           navigationPreload: true,
         },
-        // Register SW before hydration
-        registerType: 'prompt',
+        // Register SW before hydration - disabled for native builds
+        registerType: isCapacitorBuild ? 'autoUpdate' : 'prompt',
+        // Disable SW registration for Capacitor builds
+        selfDestroying: isCapacitorBuild,
 
       }),
     ],
