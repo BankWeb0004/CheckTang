@@ -1,11 +1,11 @@
 {
   "name": "tanstack_start_ts",
   "version": "1.0.0",
+  "packageManager": "npm@11.12.1",
   "private": true,
   "sideEffects": false,
   "type": "module",
   "scripts": {
-    "preinstall": "node -e \"const fs=require('fs');const p='bunfig.toml';try{let s=fs.readFileSync(p,'utf8');if(!/frozenLockfile\\s*=/.test(s)){if(!/\\[install\\]/.test(s)) s='[install]\\n'+s;s=s.replace(/\\[install\\]\\s*/,'[install]\\n');s = s + '\\nfrozenLockfile = false\\n';fs.writeFileSync(p,s);console.log('patched bunfig');}else console.log('bunfig ok');}catch(e){fs.writeFileSync(p,'[install]\\nfrozenLockfile = false\\n');console.log('created bunfig');}\", 
     "dev": "vite dev",
     "build": "vite build",
     "build:dev": "vite build --mode development",
