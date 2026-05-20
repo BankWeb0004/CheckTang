@@ -8,11 +8,13 @@ import React, { useState } from 'react';
 import { createRoot } from 'react-dom/client';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { ExpenseProvider, useStore, Transaction } from '@/lib/expense-store';
+import { useAppUpdate } from '@/lib/use-app-update';
 import { Dashboard } from '@/components/expense/Dashboard';
 import { History } from '@/components/expense/History';
 import { Settings } from '@/components/expense/Settings';
 import { AddTransactionSheet } from '@/components/expense/AddTransactionSheet';
 import { Tutorial } from '@/components/expense/Tutorial';
+import { UpdateModal } from '@/components/expense/UpdateModal';
 import { Toaster } from '@/components/ui/sonner';
 import { Hop as Home, ClipboardList, Settings as SettingsIcon, Plus } from 'lucide-react';
 import './styles.css';
@@ -20,10 +22,19 @@ import './styles.css';
 type Tab = 'dashboard' | 'history' | 'settings';
 
 function AppShell() {
-  const { t, wallpaper, showTutorial, closeTutorial } = useStore();
+  const { t, wallpaper, showTutorial, closeTutorial, lang } = useStore();
   const [tab, setTab] = useState<Tab>('dashboard');
   const [sheetOpen, setSheetOpen] = useState(false);
   const [editTransaction, setEditTransaction] = useState<Transaction | null>(null);
+  
+  // In-app update checker
+  const {
+    showModal: showUpdateModal,
+    remoteVersion,
+    currentVersion,
+    openDownload,
+    dismissUpdate,
+  } = useAppUpdate();
 
   const tabs: { id: Tab; label: string; icon: typeof Home }[] = [
     { id: 'dashboard', label: t.dashboard, icon: Home },
@@ -110,6 +121,16 @@ function AppShell() {
       />
       <Toaster />
       <Tutorial open={showTutorial} onClose={() => closeTutorial(true)} />
+      
+      {/* In-App Update Modal */}
+      <UpdateModal
+        open={showUpdateModal}
+        currentVersion={currentVersion}
+        newVersion={remoteVersion}
+        onUpdate={openDownload}
+        onDismiss={dismissUpdate}
+        lang={lang}
+      />
     </div>
   );
 }

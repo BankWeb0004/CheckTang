@@ -1,5 +1,6 @@
 import { useRef } from "react";
 import { useStore, THEME_PRESETS, Lang, CURRENCIES, CurrencyCode } from "@/lib/expense-store";
+import { APP_CONFIG } from "@/lib/app-config";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import {
@@ -219,11 +220,19 @@ export function Settings() {
             <div className="text-sm font-medium text-foreground">
               {lang === "th" ? "เกี่ยวกับแอป" : "About App"}
             </div>
-            <div className="text-base font-bold text-foreground">เช็คตังค์</div>
+            <div className="text-base font-bold text-foreground">{APP_CONFIG.appNameTh}</div>
           </div>
           <div className="text-[11px] text-right font-semibold uppercase tracking-[0.2em] text-muted-foreground space-y-0.5">
-            <div>Dev by bank</div>
-            <div>v1.0.0</div>
+            <div>{APP_CONFIG.developer}</div>
+            <div
+              className="inline-block px-2 py-0.5 rounded-md"
+              style={{
+                background: 'linear-gradient(135deg, rgba(0, 102, 255, 0.15), rgba(0, 212, 255, 0.1))',
+                color: '#00d4ff',
+              }}
+            >
+              v{APP_CONFIG.version}
+            </div>
           </div>
         </div>
       </Card>
