@@ -3,7 +3,7 @@
  * Manages SW registration and notifies the user when updates are available
  */
 
-interface UpdateEvent {
+export interface UpdateEvent {
   type: 'SW_UPDATE_AVAILABLE' | 'SW_ACTIVATED' | 'SW_OFFLINE' | 'SW_ONLINE';
   version?: string;
 }

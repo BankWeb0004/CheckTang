@@ -6,16 +6,46 @@
 // You can pass additional config via defineConfig({ vite: { ... } }) if needed.
 import { defineConfig } from "@lovable.dev/vite-tanstack-config";
 import { VitePWA } from "vite-plugin-pwa";
+import { copyFileSync, existsSync } from "node:fs";
+import { resolve } from "node:path";
 
-// Redirect TanStack Start's bundled server entry to src/server.ts (our SSR error wrapper).
-// @cloudflare/vite-plugin builds from this — wrangler.jsonc main alone is insufficient.
+// Plugin: alias dist/server/index.js -> dist/server/server.js so the
+// TanStack Start prerender preview server (which expects "server.js")
+// can boot the Cloudflare-bundled worker (emitted as "index.js").
+function aliasServerOutput() {
+  return {
+    name: "alias-server-output",
+    apply: "build" as const,
+    closeBundle: {
+      order: "post" as const,
+      sequential: true,
+      handler() {
+        const dir = resolve(process.cwd(), "dist/server");
+        const src = resolve(dir, "index.js");
+        const dst = resolve(dir, "server.js");
+        if (existsSync(src) && !existsSync(dst)) {
+          copyFileSync(src, dst);
+        }
+      },
+    },
+  };
+}
+
 export default defineConfig({
   tanstackStart: {
-    server: { entry: "server", preset: "vercel" }
+    spa: {
+      enabled: true,
+      prerender: {
+        outputPath: "/index.html",
+      },
+    },
   },
+
   vite: {
     plugins: [
+      aliasServerOutput(),
       VitePWA({
+
         // Use custom service worker from public/sw.js
         strategies: 'injectManifest',
         injectManifest: {
@@ -144,8 +174,7 @@ export default defineConfig({
         },
         // Register SW before hydration
         registerType: 'prompt',
-        // Don't reload the page automatically
-        autoUpdate: true,
+
       }),
     ],
   },
