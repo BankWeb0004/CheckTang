@@ -1,0 +1,137 @@
+{
+  "name": "CheckTang",
+  "short_name": "CheckTang",
+  "description": "Expense tracker with offline support and instant load times",
+  "start_url": "/",
+  "scope": "/",
+  "display": "standalone",
+  "orientation": "portrait-primary",
+  "theme_color": "#000000",
+  "background_color": "#ffffff",
+  "categories": ["finance", "productivity"],
+  "screenshots": [
+    {
+      "src": "/assets/icons/icon-512x512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "form_factor": "wide"
+    },
+    {
+      "src": "/assets/icons/icon-192x192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "form_factor": "narrow"
+    }
+  ],
+  "icons": [
+    {
+      "src": "/assets/icons/icon-32x32.png",
+      "sizes": "32x32",
+      "type": "image/png"
+    },
+    {
+      "src": "/assets/icons/icon-64x64.png",
+      "sizes": "64x64",
+      "type": "image/png"
+    },
+    {
+      "src": "/assets/icons/icon-128x128.png",
+      "sizes": "128x128",
+      "type": "image/png"
+    },
+    {
+      "src": "/assets/icons/icon-152x152.png",
+      "sizes": "152x152",
+      "type": "image/png"
+    },
+    {
+      "src": "/assets/icons/icon-167x167.png",
+      "sizes": "167x167",
+      "type": "image/png"
+    },
+    {
+      "src": "/assets/icons/icon-180x180.png",
+      "sizes": "180x180",
+      "type": "image/png"
+    },
+    {
+      "src": "/assets/icons/icon-192x192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "/assets/icons/icon-256x256.png",
+      "sizes": "256x256",
+      "type": "image/png"
+    },
+    {
+      "src": "/assets/icons/icon-512x512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "/assets/icons/icon-1024x1024.png",
+      "sizes": "1024x1024",
+      "type": "image/png"
+    },
+    {
+      "src": "/assets/icons/app-icon.png",
+      "sizes": "1024x1024",
+      "type": "image/png",
+      "purpose": "any"
+    }
+  ],
+  "shortcuts": [
+    {
+      "name": "Add Transaction",
+      "short_name": "Add",
+      "description": "Quickly add a new transaction",
+      "url": "/?mode=add",
+      "icons": [
+        {
+          "src": "/assets/icons/icon-192x192.png",
+          "sizes": "192x192"
+        }
+      ]
+    },
+    {
+      "name": "View Dashboard",
+      "short_name": "Dashboard",
+      "description": "View your expense dashboard",
+      "url": "/?mode=dashboard",
+      "icons": [
+        {
+          "src": "/assets/icons/icon-192x192.png",
+          "sizes": "192x192"
+        }
+      ]
+    },
+    {
+      "name": "View History",
+      "short_name": "History",
+      "description": "View your transaction history",
+      "url": "/?mode=history",
+      "icons": [
+        {
+          "src": "/assets/icons/icon-192x192.png",
+          "sizes": "192x192"
+        }
+      ]
+    }
+  ],
+  "share_target": {
+    "action": "/share",
+    "method": "POST",
+    "enctype": "application/x-www-form-urlencoded",
+    "params": {
+      "files": [
+        {
+          "name": "amount",
+          "accept": ["text/plain"]
+        }
+      ]
+    }
+  }
+}

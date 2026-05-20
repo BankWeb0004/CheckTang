@@ -9,6 +9,7 @@ import {
 } from "@tanstack/react-router";
 
 import appCss from "../styles.css?url";
+import { useServiceWorkerUpdates } from "../hooks/use-service-worker-updates";
 
 function NotFoundComponent() {
   return (
@@ -71,24 +72,46 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
   head: () => ({
     meta: [
       { charSet: "utf-8" },
-      { name: "viewport", content: "width=device-width, initial-scale=1" },
-      { title: "Lovable App" },
-      { name: "description", content: "Gentle Finance is a minimalist, mobile-responsive web app for tracking income and expenses." },
-      { name: "author", content: "Lovable" },
-      { property: "og:title", content: "Lovable App" },
-      { property: "og:description", content: "Gentle Finance is a minimalist, mobile-responsive web app for tracking income and expenses." },
+      { name: "viewport", content: "width=device-width, initial-scale=1, user-scalable=no" },
+      { title: "CheckTang" },
+      { name: "description", content: "Expense tracker with offline support, instant load times, and smart caching." },
+      { name: "author", content: "CheckTang" },
+      { name: "theme-color", content: "#000000" },
+      { name: "mobile-web-app-capable", content: "yes" },
+      { name: "apple-mobile-web-app-capable", content: "yes" },
+      { name: "apple-mobile-web-app-status-bar-style", content: "black-translucent" },
+      { name: "apple-mobile-web-app-title", content: "CheckTang" },
+      { property: "og:title", content: "CheckTang" },
+      { property: "og:description", content: "Expense tracker with offline support, instant load times, and smart caching." },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary" },
-      { name: "twitter:site", content: "@Lovable" },
-      { name: "twitter:title", content: "Lovable App" },
-      { name: "twitter:description", content: "Gentle Finance is a minimalist, mobile-responsive web app for tracking income and expenses." },
-      { property: "og:image", content: "https://pub-bb2e103a32db4e198524a2e9ed8f35b4.r2.dev/bc935a9a-866c-467e-9f8d-67c1f928ad26/id-preview-d6d18194--f5fd483b-7fd9-43f3-8455-8747400ebec9.lovable.app-1779022781708.png" },
-      { name: "twitter:image", content: "https://pub-bb2e103a32db4e198524a2e9ed8f35b4.r2.dev/bc935a9a-866c-467e-9f8d-67c1f928ad26/id-preview-d6d18194--f5fd483b-7fd9-43f3-8455-8747400ebec9.lovable.app-1779022781708.png" },
+      { name: "twitter:title", content: "CheckTang" },
+      { name: "twitter:description", content: "Expense tracker with offline support, instant load times, and smart caching." },
     ],
     links: [
       {
         rel: "stylesheet",
         href: appCss,
+      },
+      {
+        rel: "manifest",
+        href: "/manifest.json",
+      },
+      {
+        rel: "icon",
+        href: "/assets/icons/icon-32x32.png",
+        sizes: "32x32",
+        type: "image/png",
+      },
+      {
+        rel: "icon",
+        href: "/assets/icons/icon-192x192.png",
+        sizes: "192x192",
+        type: "image/png",
+      },
+      {
+        rel: "apple-touch-icon",
+        href: "/assets/icons/icon-180x180.png",
       },
     ],
   }),
@@ -97,6 +120,7 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
   notFoundComponent: NotFoundComponent,
   errorComponent: ErrorComponent,
 });
+
 
 function RootShell({ children }: { children: React.ReactNode }) {
   return (
@@ -114,6 +138,9 @@ function RootShell({ children }: { children: React.ReactNode }) {
 
 function RootComponent() {
   const { queryClient } = Route.useRouteContext();
+  
+  // Activate service worker update notifications
+  useServiceWorkerUpdates();
 
   return (
     <QueryClientProvider client={queryClient}>
