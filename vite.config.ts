@@ -6,12 +6,11 @@
 // You can pass additional config via defineConfig({ vite: { ... } }) if needed.
 import { defineConfig } from "@lovable.dev/vite-tanstack-config";
 import { VitePWA } from "vite-plugin-pwa";
-import { copyFileSync, existsSync } from "node:fs";
+import { existsSync, readFileSync, writeFileSync } from "node:fs";
 import { resolve } from "node:path";
 
-// Plugin: alias dist/server/index.js -> dist/server/server.js so the
-// TanStack Start prerender preview server (which expects "server.js")
-// can boot the Cloudflare-bundled worker (emitted as "index.js").
+// TanStack Start prerender expects dist/server/server.js, but the Cloudflare
+// plugin emits a hashed worker entry under assets/. Read wrangler.json main.
 function aliasServerOutput() {
   return {
     name: "alias-server-output",
@@ -21,11 +20,33 @@ function aliasServerOutput() {
       sequential: true,
       handler() {
         const dir = resolve(process.cwd(), "dist/server");
-        const src = resolve(dir, "index.js");
+        const wranglerPath = resolve(dir, "wrangler.json");
         const dst = resolve(dir, "server.js");
-        if (existsSync(src) && !existsSync(dst)) {
-          copyFileSync(src, dst);
+
+        let mainEntry: string | undefined;
+
+        if (existsSync(wranglerPath)) {
+          try {
+            const wrangler = JSON.parse(readFileSync(wranglerPath, "utf-8")) as {
+              main?: string;
+            };
+            mainEntry = wrangler.main;
+          } catch {
+            // Fall through to legacy path below.
+          }
         }
+
+        if (!mainEntry) {
+          const legacySrc = resolve(dir, "index.js");
+          if (existsSync(legacySrc)) {
+            mainEntry = "index.js";
+          }
+        }
+
+        if (!mainEntry || !existsSync(resolve(dir, mainEntry))) return;
+
+        const importPath = mainEntry.replace(/\\/g, "/");
+        writeFileSync(dst, `export { default } from "./${importPath}";\n`);
       },
     },
   };
