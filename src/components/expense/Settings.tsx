@@ -11,6 +11,7 @@ import {
 } from "@/components/ui/select";
 import { Check, Upload, X, Sun, Moon, BookOpen } from "lucide-react";
 import { toast } from "sonner";
+import { appConfig } from "@/lib/app-config";
 
 export function Settings() {
   const {
@@ -223,7 +224,7 @@ export function Settings() {
           </div>
           <div className="text-[11px] text-right font-semibold uppercase tracking-[0.2em] text-muted-foreground space-y-0.5">
             <div>Dev by bank</div>
-            <div>v1.0.0</div>
+            <div>v{appConfig.currentVersion}</div>
           </div>
         </div>
       </Card>

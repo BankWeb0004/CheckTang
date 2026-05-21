@@ -13,7 +13,9 @@ import { History } from '@/components/expense/History';
 import { Settings } from '@/components/expense/Settings';
 import { AddTransactionSheet } from '@/components/expense/AddTransactionSheet';
 import { Tutorial } from '@/components/expense/Tutorial';
+import { UpdateModal } from '@/components/UpdateModal';
 import { Toaster } from '@/components/ui/sonner';
+import { useAppUpdate } from '@/hooks/use-app-update';
 import { Hop as Home, ClipboardList, Settings as SettingsIcon, Plus } from 'lucide-react';
 import './styles.css';
 
@@ -21,6 +23,7 @@ type Tab = 'dashboard' | 'history' | 'settings';
 
 function AppShell() {
   const { t, wallpaper, showTutorial, closeTutorial } = useStore();
+  const { showModal, updateInfo, currentVersion, applyUpdate, dismissUpdate } = useAppUpdate();
   const [tab, setTab] = useState<Tab>('dashboard');
   const [sheetOpen, setSheetOpen] = useState(false);
   const [editTransaction, setEditTransaction] = useState<Transaction | null>(null);
@@ -110,6 +113,13 @@ function AppShell() {
       />
       <Toaster />
       <Tutorial open={showTutorial} onClose={() => closeTutorial(true)} />
+      <UpdateModal
+        open={showModal}
+        updateInfo={updateInfo}
+        currentVersion={currentVersion}
+        onUpdate={applyUpdate}
+        onDismiss={dismissUpdate}
+      />
     </div>
   );
 }
