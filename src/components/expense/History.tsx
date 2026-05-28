@@ -1,16 +1,27 @@
 import { useMemo } from "react";
-import { useStore, formatCurrency, Transaction } from "@/lib/expense-store";
+import {
+  useStore,
+  Transaction,
+  getCategoryLabel,
+} from "@/lib/expense-store";
+import { SmartAmount } from "@/components/expense/SmartAmount";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Trash2, Edit3 } from "lucide-react";
+import { Trash2, Edit3, ArrowRightLeft } from "lucide-react";
 
-function formatDateLabel(iso: string, lang: "en" | "th", t: ReturnType<typeof useStore>["t"]) {
+function formatDateLabel(
+  iso: string,
+  lang: "en" | "th",
+  t: ReturnType<typeof useStore>["t"]
+) {
   const d = new Date(iso);
   const today = new Date();
   const yest = new Date();
   yest.setDate(today.getDate() - 1);
   const sameDay = (a: Date, b: Date) =>
-    a.getFullYear() === b.getFullYear() && a.getMonth() === b.getMonth() && a.getDate() === b.getDate();
+    a.getFullYear() === b.getFullYear() &&
+    a.getMonth() === b.getMonth() &&
+    a.getDate() === b.getDate();
   if (sameDay(d, today)) return t.today;
   if (sameDay(d, yest)) return t.yesterday;
   return d.toLocaleDateString(lang === "th" ? "th-TH" : "en-US", {
@@ -26,11 +37,11 @@ interface Props {
 }
 
 export function History({ onEdit }: Props) {
-  const { transactions, t, lang, currency, deleteTransaction } = useStore();
+  const { transactions, t, lang, deleteTransaction, getWalletById } = useStore();
 
   const grouped = useMemo(() => {
-    const sorted = [...transactions].sort((a, b) =>
-      b.date.localeCompare(a.date) || b.createdAt - a.createdAt
+    const sorted = [...transactions].sort(
+      (a, b) => b.date.localeCompare(a.date) || b.createdAt - a.createdAt
     );
     const map = new Map<string, Transaction[]>();
     sorted.forEach((tx) => {
@@ -52,10 +63,12 @@ export function History({ onEdit }: Props) {
   return (
     <div className="space-y-6">
       {grouped.map(([date, items]) => {
-        const dayTotal = items.reduce(
-          (s, tx) => s + (tx.type === "income" ? tx.amount : -tx.amount),
-          0
-        );
+        // Day total: transfers are wallet-internal and don't change net worth
+        const dayTotal = items.reduce((s, tx) => {
+          if (tx.type === "income") return s + tx.amount;
+          if (tx.type === "expense") return s - tx.amount;
+          return s;
+        }, 0);
         return (
           <div key={date}>
             <div className="flex items-center justify-between mb-2 px-1">
@@ -64,45 +77,66 @@ export function History({ onEdit }: Props) {
               </div>
               <div
                 className="text-xs font-medium"
-                style={{ color: dayTotal < 0 ? "var(--expense)" : "var(--income)" }}
+                style={{
+                  color: dayTotal < 0 ? "var(--expense)" : "var(--income)",
+                }}
               >
-                {formatCurrency(dayTotal, lang, currency)}
+                <SmartAmount value={dayTotal} colorize={false} className="text-xs font-medium" />
               </div>
             </div>
             <Card className="card-soft divide-y divide-border overflow-hidden">
               {items.map((tx) => {
                 const isInc = tx.type === "income";
-                const color = isInc ? "var(--income)" : "var(--expense)";
+                const isTrans = tx.type === "transfer";
+                const color = isTrans
+                  ? "var(--primary)"
+                  : isInc
+                    ? "var(--income)"
+                    : "var(--expense)";
+                const fromW = getWalletById(tx.wallet_id);
+                const toW = tx.to_wallet_id ? getWalletById(tx.to_wallet_id) : null;
+                const catLabel = isTrans
+                  ? t.transfer
+                  : getCategoryLabel(tx.category_name, t.categories);
+
                 return (
-                  <div
-                    key={tx.id}
-                    className="flex items-center gap-3 p-4 group"
-                  >
+                  <div key={tx.id} className="flex items-center gap-3 p-4 group">
                     <div
-                      className="h-10 w-10 rounded-full flex items-center justify-center flex-shrink-0 text-sm font-medium"
+                      className="h-10 w-10 rounded-full flex items-center justify-center flex-shrink-0 text-base font-medium"
                       style={{
-                        background: isInc
-                          ? "color-mix(in oklab, var(--income) 18%, transparent)"
-                          : "color-mix(in oklab, var(--expense) 18%, transparent)",
+                        background: `color-mix(in oklab, ${color} 18%, transparent)`,
                         color,
                       }}
                     >
-                      {isInc ? "+" : "−"}
+                      {isTrans ? (
+                        <ArrowRightLeft className="h-4 w-4" />
+                      ) : tx.category_emoji ? (
+                        <span>{tx.category_emoji}</span>
+                      ) : isInc ? (
+                        "+"
+                      ) : (
+                        "−"
+                      )}
                     </div>
                     <div className="flex-1 min-w-0">
-                      <div className="text-sm font-medium truncate">
-                        {t.categories[tx.category as keyof typeof t.categories] ?? tx.category}
+                      <div className="text-sm font-medium truncate text-foreground">
+                        {catLabel}
                       </div>
                       <div className="text-xs text-muted-foreground truncate">
-                        {t.methods[tx.method as keyof typeof t.methods] ?? tx.method}
+                        {isTrans && toW
+                          ? `${fromW?.emoji ?? ""} ${fromW?.name ?? "—"} → ${toW.emoji} ${toW.name}`
+                          : `${fromW?.emoji ?? ""} ${fromW?.name ?? "—"}`}
                         {tx.note ? ` · ${tx.note}` : ""}
                       </div>
                     </div>
-                    <div className="text-sm font-semibold tabular-nums" style={{ color }}>
-                      {isInc ? "+" : "−"}
-                      {formatCurrency(tx.amount, lang, currency).replace("-", "")}
+                    <div
+                      className="text-sm font-semibold tabular-nums"
+                      style={{ color }}
+                    >
+                      {isTrans ? "" : isInc ? "+" : "−"}
+                      <SmartAmount value={tx.amount} colorize={false} className="text-sm font-semibold" />
                     </div>
-                    <div className="flex items-center gap-2">
+                    <div className="flex items-center gap-1">
                       <Button
                         variant="ghost"
                         size="icon"
