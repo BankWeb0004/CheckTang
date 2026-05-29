@@ -1,21 +1,17 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useState } from "react";
 import { ExpenseProvider, useStore, Transaction } from "@/lib/expense-store";
+import { CheckTangLogo } from "@/components/expense/CheckTangLogo";
 import { Dashboard } from "@/components/expense/Dashboard";
 import { History } from "@/components/expense/History";
 import { Wallets } from "@/components/expense/Wallets";
 import { WalletsPane } from "@/components/expense/WalletsPane";
+import { WalletDetailSheet } from "@/components/expense/WalletDetailSheet";
 import { Settings } from "@/components/expense/Settings";
 import { AddTransactionSheet } from "@/components/expense/AddTransactionSheet";
 import { Tutorial } from "@/components/expense/Tutorial";
 import { UpdateModal } from "@/components/UpdateModal";
 import { Toaster } from "@/components/ui/sonner";
-import {
-  Sheet,
-  SheetContent,
-  SheetHeader,
-  SheetTitle,
-} from "@/components/ui/sheet";
 import { useAppUpdate } from "@/hooks/use-app-update";
 import {
   Hop as Home,
@@ -28,13 +24,13 @@ import {
 export const Route = createFileRoute("/")({
   head: () => ({
     meta: [
-      { title: "เช็คตังค์ — CHECK TANG" },
+      { title: "Check Tang — เช็คตังค์" },
       {
         name: "description",
         content:
-          "เช็คตังค์ — แอปบันทึกรายรับ-รายจ่ายหลายกระเป๋า รองรับโอนเงิน หลายสกุล และภาษาไทย/อังกฤษ",
+          "Check Tang — บันทึกรายรับ-รายจ่ายหลายกระเป๋า รองรับโอนเงิน หลายสกุล และภาษาไทย/อังกฤษ",
       },
-      { property: "og:title", content: "เช็คตังค์ — CHECK TANG" },
+      { property: "og:title", content: "Check Tang" },
       {
         property: "og:description",
         content: "Track income, expenses, and wallet transfers in a clean modern interface.",
@@ -55,14 +51,14 @@ export const Route = createFileRoute("/")({
 type Tab = "dashboard" | "history" | "wallets" | "settings";
 
 function AppShell() {
-  const { t, wallpaper, showTutorial, closeTutorial } = useStore();
+  const { t, lang, wallpaper, showTutorial, closeTutorial } = useStore();
   const { showModal, updateInfo, currentVersion, applyUpdate, dismissUpdate } =
     useAppUpdate();
   const [tab, setTab] = useState<Tab>("dashboard");
   const [sheetOpen, setSheetOpen] = useState(false);
   const [editTransaction, setEditTransaction] = useState<Transaction | null>(null);
   const [preselectedWallet, setPreselectedWallet] = useState<string | null>(null);
-  const [mobileWalletsOpen, setMobileWalletsOpen] = useState(false);
+  const [detailWalletId, setDetailWalletId] = useState<string | null>(null);
 
   const tabs: { id: Tab; label: string; icon: typeof Home }[] = [
     { id: "dashboard", label: t.dashboard, icon: Home },
@@ -75,8 +71,17 @@ function AppShell() {
     setEditTransaction(null);
     setPreselectedWallet(walletId ?? null);
     setSheetOpen(true);
-    setMobileWalletsOpen(false);
   };
+
+  const openWallet = (walletId: string) => setDetailWalletId(walletId);
+
+  const today = new Date();
+  const dateLabel = today.toLocaleDateString(lang === "th" ? "th-TH" : "en-US", {
+    weekday: "short",
+    day: "numeric",
+    month: "short",
+    year: "numeric",
+  });
 
   const renderMain = () => {
     switch (tab) {
@@ -93,7 +98,7 @@ function AppShell() {
           />
         );
       case "wallets":
-        return <Wallets />;
+        return <Wallets onOpenWallet={openWallet} />;
       case "settings":
         return <Settings />;
     }
@@ -119,6 +124,22 @@ function AppShell() {
 
       {/* Container: single column < lg, 2-col grid >= lg */}
       <div className="relative max-w-7xl mx-auto px-4 sm:px-5 pt-4 pb-32 lg:pb-10">
+        {/* Branding header — own topmost row */}
+        <header className="flex items-center justify-between mb-4">
+          <div className="flex items-center gap-2.5 text-foreground">
+            <CheckTangLogo showLabel={false} className="text-primary scale-75 -ml-2" />
+            <span
+              className="text-lg font-bold tracking-tight"
+              style={{ fontFamily: "'Plus Jakarta Sans', 'Inter', system-ui" }}
+            >
+              Check Tang
+            </span>
+          </div>
+          <span className="text-[11px] text-muted-foreground tracking-wide">
+            {dateLabel}
+          </span>
+        </header>
+
         <div className="grid grid-cols-1 lg:grid-cols-[minmax(0,_1fr)_360px] gap-5">
           {/* LEFT panel */}
           <main className="min-w-0">{renderMain()}</main>
@@ -135,7 +156,7 @@ function AppShell() {
         </div>
       </div>
 
-      {/* Mobile FAB (hidden on lg+ since right pane has actions) */}
+      {/* SINGLE FAB bottom-right */}
       <button
         onClick={() => openAddTx()}
         aria-label={t.add}
@@ -148,19 +169,10 @@ function AppShell() {
         <Plus className="h-6 w-6" />
       </button>
 
-      {/* Mobile wallets-pane trigger (FAB style) */}
-      <button
-        onClick={() => setMobileWalletsOpen(true)}
-        aria-label={t.quickSummary}
-        className="fixed bottom-24 left-5 z-30 h-12 w-12 rounded-full bg-card text-foreground border border-border shadow-md hover:scale-105 active:scale-95 transition-transform flex items-center justify-center lg:hidden"
-      >
-        <WalletIcon className="h-5 w-5" />
-      </button>
-
-      {/* Bottom nav (mobile & tablet) — also visible on lg as compact secondary nav */}
-      <nav className="fixed bottom-0 left-0 right-0 z-20 lg:static lg:mt-0">
+      {/* Bottom nav (mobile) */}
+      <nav className="fixed bottom-0 left-0 right-0 z-20 lg:hidden">
         <div
-          className="max-w-md mx-auto m-3 lg:hidden rounded-2xl border border-border bg-card/90 backdrop-blur-md grid grid-cols-4"
+          className="max-w-md mx-auto m-3 rounded-2xl border border-border bg-card/90 backdrop-blur-md grid grid-cols-4"
           style={{ boxShadow: "0 8px 24px -10px rgba(0,0,0,0.12)" }}
         >
           {tabs.map(({ id, label, icon: Icon }) => {
@@ -203,24 +215,6 @@ function AppShell() {
         })}
       </div>
 
-      {/* Mobile wallets bottom sheet */}
-      <Sheet open={mobileWalletsOpen} onOpenChange={setMobileWalletsOpen}>
-        <SheetContent side="bottom" className="rounded-t-3xl max-h-[85vh] overflow-y-auto">
-          <SheetHeader>
-            <SheetTitle className="text-center">{t.quickSummary}</SheetTitle>
-          </SheetHeader>
-          <div className="mt-3 pb-4">
-            <WalletsPane
-              onAddTransaction={openAddTx}
-              onManageWallets={() => {
-                setTab("wallets");
-                setMobileWalletsOpen(false);
-              }}
-            />
-          </div>
-        </SheetContent>
-      </Sheet>
-
       <AddTransactionSheet
         open={sheetOpen}
         onOpenChange={(o) => {
@@ -233,6 +227,21 @@ function AppShell() {
         editTransaction={editTransaction}
         initialWalletId={preselectedWallet}
       />
+
+      <WalletDetailSheet
+        walletId={detailWalletId}
+        open={!!detailWalletId}
+        onOpenChange={(o) => {
+          if (!o) setDetailWalletId(null);
+        }}
+        onEdit={(tx) => {
+          setDetailWalletId(null);
+          setEditTransaction(tx);
+          setPreselectedWallet(null);
+          setSheetOpen(true);
+        }}
+      />
+
       <Toaster />
       <Tutorial open={showTutorial} onClose={() => closeTutorial(true)} />
       <UpdateModal
