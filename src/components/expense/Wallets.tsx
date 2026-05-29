@@ -1,163 +1,115 @@
-import { useState } from "react";
-import { useStore } from "@/lib/expense-store";
-import { SmartAmount } from "@/components/expense/SmartAmount";
-import { Card } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import {
-  Dialog,
-  DialogContent,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog";
-import { Pencil, Plus, Trash2 } from "lucide-react";
-import { toast } from "sonner";
+import React, { useState } from 'react';
+import { useStore } from '../../lib/expense-store';
+import { Wallet as WalletIcon, Plus, Trash2, Layers } from 'lucide-react';
 
 export function Wallets() {
-  const { walletsWithBalance, t, addWallet, updateWallet, deleteWallet } =
-    useStore();
+  const { wallets, transactions, addWallet, deleteWallet, t } = useStore();
+  const [newWalletName, setNewWalletName] = useState('');
 
-  const [open, setOpen] = useState(false);
-  const [editId, setEditId] = useState<string | null>(null);
-  const [name, setName] = useState("");
-  const [emoji, setEmoji] = useState("👛");
-
-  const openNew = () => {
-    setEditId(null);
-    setName("");
-    setEmoji("👛");
-    setOpen(true);
-  };
-  const openEdit = (id: string, n: string, e: string) => {
-    setEditId(id);
-    setName(n);
-    setEmoji(e);
-    setOpen(true);
-  };
-  const submit = () => {
-    const trimmed = name.trim();
-    if (!trimmed) {
-      toast.error(t.walletName);
-      return;
-    }
-    if (editId) {
-      updateWallet(editId, { name: trimmed, emoji: emoji || "👛" });
-    } else {
-      const w = addWallet(trimmed, emoji || "👛");
-      if (!w) {
-        toast.error(t.walletName);
-        return;
+  // คำนวณยอดเงินของแต่ละกระเป๋าแบบ Real-time
+  const getWalletBalance = (walletId: string) => {
+    let balance = 0;
+    transactions.forEach((tx) => {
+      if (tx.wallet_id === walletId) {
+        if (tx.type === 'expense' || tx.type === 'transfer') balance -= tx.amount;
+        if (tx.type === 'income') balance += tx.amount;
       }
-    }
-    setOpen(false);
+      if (tx.type === 'transfer' && tx.to_wallet_id === walletId) {
+        balance += tx.amount;
+      }
+    });
+    return balance;
   };
-  const onDelete = (id: string) => {
-    if (!confirm(t.confirmDeleteWallet)) return;
-    const ok = deleteWallet(id);
-    if (!ok) toast.error(t.cannotDeleteLastWallet);
+
+  const handleAddWallet = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!newWalletName.trim()) return;
+    
+    // ส่งอาร์กิวเมนต์แบบรองรับโครงสร้างดั้งเดิม (2 arguments ตามสโตร์เดิมของคุณแบงค์)
+    addWallet(newWalletName.trim(), '💳');
+    setNewWalletName('');
   };
+
+  const totalBalance = wallets.reduce((acc, w) => acc + getWalletBalance(w.id), 0);
 
   return (
-    <div className="space-y-3">
-      <div className="flex items-center justify-between gap-3">
-        <h2 className="text-sm font-semibold uppercase tracking-[0.18em] text-muted-foreground">
-          {t.wallets}
+    <div className="space-y-6">
+      {/* Overview Balance Card */}
+      <div className="bg-gradient-to-br from-zinc-900 via-zinc-800 to-zinc-950 dark:from-zinc-950 dark:via-zinc-900 dark:to-black p-6 rounded-2xl shadow-lg border border-zinc-800 relative overflow-hidden text-white">
+        <div className="absolute top-0 right-0 p-6 opacity-10">
+          <Layers className="w-32 h-32" />
+        </div>
+        <p className="text-xs font-semibold uppercase tracking-widest text-zinc-400">สินทรัพย์รวมทั้งหมด</p>
+        <h2 className="text-3xl font-black mt-1.5 tracking-tight">
+          ฿{totalBalance.toLocaleString(undefined, { minimumFractionDigits: 2 })}
         </h2>
-        <Button size="sm" onClick={openNew} className="rounded-xl h-9">
-          <Plus className="h-4 w-4 mr-1.5" />
-          {t.addWallet}
-        </Button>
       </div>
 
-      <div className="space-y-2">
-        {walletsWithBalance.map((w) => (
-          <Card key={w.id} className="card-soft p-4 flex items-center gap-3">
-            <div className="h-12 w-12 rounded-2xl bg-muted flex items-center justify-center text-2xl flex-shrink-0">
-              {w.emoji}
-            </div>
-            <div className="flex-1 min-w-0">
-              <div className="text-sm font-semibold text-foreground truncate">
-                {w.name}
-              </div>
-              <div className="text-xs text-muted-foreground">{t.balance}</div>
-            </div>
-            <div className="text-right">
-              <SmartAmount value={w.balance} className="text-base font-semibold" />
-            </div>
-            <div className="flex items-center gap-1">
-              <Button
-                variant="ghost"
-                size="icon"
-                className="h-8 w-8 opacity-50 hover:opacity-100"
-                onClick={() => openEdit(w.id, w.name, w.emoji)}
-                aria-label="edit"
-              >
-                <Pencil className="h-4 w-4" />
-              </Button>
-              <Button
-                variant="ghost"
-                size="icon"
-                className="h-8 w-8 opacity-50 hover:opacity-100"
-                onClick={() => onDelete(w.id)}
-                aria-label={t.deleteWallet}
-              >
-                <Trash2 className="h-4 w-4" />
-              </Button>
-            </div>
-          </Card>
-        ))}
+      {/* Header */}
+      <div className="flex items-center justify-between">
+        <h1 className="text-xl font-bold text-zinc-900 dark:text-zinc-50 flex items-center gap-2">
+          กระเป๋าเงินของคุณ
+        </h1>
       </div>
 
-      <Dialog open={open} onOpenChange={setOpen}>
-        <DialogContent className="rounded-2xl sm:max-w-sm">
-          <DialogHeader>
-            <DialogTitle>{editId ? t.editTransaction : t.addWallet}</DialogTitle>
-          </DialogHeader>
-          <div className="grid grid-cols-[5rem_1fr] gap-2 items-end pt-2">
-            <div className="space-y-1.5">
-              <Label>{t.walletEmoji}</Label>
-              <Input
-                value={emoji}
-                onChange={(e) => setEmoji(e.target.value.slice(0, 8))}
-                placeholder="👛"
-                className="rounded-xl h-11 text-center text-xl"
-                maxLength={8}
-              />
-            </div>
-            <div className="space-y-1.5">
-              <Label>{t.walletName}</Label>
-              <Input
-                autoFocus
-                value={name}
-                onChange={(e) => setName(e.target.value)}
-                placeholder={t.walletName}
-                maxLength={40}
-                onKeyDown={(e) => {
-                  if (e.key === "Enter") {
-                    e.preventDefault();
-                    submit();
-                  }
-                }}
-                className="rounded-xl h-11"
-              />
-            </div>
-          </div>
-          <DialogFooter className="gap-2 sm:gap-2">
-            <Button
-              variant="outline"
-              onClick={() => setOpen(false)}
-              className="rounded-xl"
+      {/* Add Wallet Form */}
+      <form onSubmit={handleAddWallet} className="flex gap-2 max-w-md">
+        <input
+          type="text"
+          placeholder="ชื่อกระเป๋าเงินใหม่..."
+          value={newWalletName}
+          onChange={(e) => setNewWalletName(e.target.value)}
+          className="flex-1 px-4 py-2.5 text-sm bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-700 rounded-xl focus:outline-none focus:ring-2 focus:ring-emerald-500/20 text-zinc-900 dark:text-zinc-50"
+          required
+        />
+        <button
+          type="submit"
+          className="px-4 py-2.5 bg-zinc-900 dark:bg-zinc-100 hover:bg-zinc-800 dark:hover:bg-zinc-200 text-white dark:text-zinc-900 font-semibold rounded-xl text-sm shadow-sm transition-colors flex items-center gap-1"
+        >
+          <Plus className="w-4 h-4" /> เพิ่ม
+        </button>
+      </form>
+
+      {/* Wallets Grid */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
+        {wallets.map((wallet) => {
+          const currentBalance = getWalletBalance(wallet.id);
+          return (
+            <div
+              key={wallet.id}
+              className="bg-white dark:bg-zinc-900 border border-zinc-100 dark:border-zinc-800 p-5 rounded-2xl shadow-sm hover:shadow-md transition-shadow flex flex-col justify-between group relative"
             >
-              {t.cancel}
-            </Button>
-            <Button onClick={submit} className="rounded-xl">
-              {t.save}
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
+              <div className="flex items-start justify-between">
+                <div className="p-2.5 bg-zinc-50 dark:bg-zinc-800 rounded-xl text-zinc-600 dark:text-zinc-300">
+                  <WalletIcon className="w-5 h-5" />
+                </div>
+                
+                {wallets.length > 1 && (
+                  <button
+                    onClick={() => {
+                      if (confirm('คุณแน่ใจว่าต้องการลบกระเป๋าเงินนี้? (ธุรกรรมภายในกระเป๋าจะยังคงอยู่ แต่ชื่อกระเป๋าจะหายไป)')) {
+                        deleteWallet(wallet.id);
+                      }
+                    }}
+                    className="p-1.5 rounded-lg text-zinc-300 hover:text-rose-500 hover:bg-rose-50 dark:hover:bg-rose-950/30 opacity-0 group-hover:opacity-100 transition-all"
+                  >
+                    <Trash2 className="w-4 h-4" />
+                  </button>
+                )}
+              </div>
+
+              <div className="mt-4">
+                <h3 className="text-sm font-semibold text-zinc-500 dark:text-zinc-400 truncate">
+                  {wallet.name}
+                </h3>
+                <p className="text-xl font-bold text-zinc-900 dark:text-zinc-50 mt-1">
+                  ฿{currentBalance.toLocaleString(undefined, { minimumFractionDigits: 2 })}
+                </p>
+              </div>
+            </div>
+          );
+        })}
+      </div>
     </div>
   );
 }

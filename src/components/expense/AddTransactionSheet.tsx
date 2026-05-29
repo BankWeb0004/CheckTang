@@ -1,578 +1,203 @@
-import { useState, useCallback, useMemo, useEffect } from "react";
-import {
-  useStore,
-  TxType,
-  Transaction,
-  NewTransactionInput,
-  getCategoryLabel,
-  DEFAULT_CATEGORY_EMOJI,
-} from "@/lib/expense-store";
-import {
-  Sheet,
-  SheetContent,
-  SheetHeader,
-  SheetTitle,
-} from "@/components/ui/sheet";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { Textarea } from "@/components/ui/textarea";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
-import {
-  Dialog,
-  DialogContent,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog";
-import { toast } from "sonner";
-import { Plus, Trash2, ArrowRightLeft, ArrowDownLeft, ArrowUpRight } from "lucide-react";
+import React, { useState } from 'react';
+import { useStore } from '../../lib/expense-store';
+import { X, Plus, Check } from 'lucide-react';
 
-interface Props {
-  open: boolean;
-  onOpenChange: (o: boolean) => void;
-  editTransaction?: Transaction | null;
-  /** Optional preselected source wallet (e.g. from WalletsPane quick action) */
-  initialWalletId?: string | null;
+interface AddTransactionSheetProps {
+  isOpen: boolean;
+  onClose: () => void;
 }
 
-interface TxRow {
-  id: string;
-  walletId: string;
-  toWalletId: string;
-  amount: string;
-  displayAmount: string;
-  category: string;
-  categoryEmoji: string;
-  note: string;
-  date: string;
-}
+export function AddTransactionSheet({ isOpen, onClose }: AddTransactionSheetProps) {
+  const { wallets = [], addTransaction, t } = useStore();
 
-const ADD_CATEGORY_SENTINEL = "__add_new_category__";
+  const [type, setType] = useState<'income' | 'expense' | 'transfer'>('expense');
+  const [amount, setAmount] = useState('');
+  const [walletId, setWalletId] = useState(wallets[0]?.id || '');
+  const [toWalletId, setToWalletId] = useState(wallets[1]?.id || wallets[0]?.id || '');
+  const [note, setNote] = useState('');
+  const [date, setDate] = useState(new Date().toISOString().split('T')[0]);
+  const [addAnother, setAddAnother] = useState(false);
 
-function formatWithCommas(value: string): string {
-  const clean = value.replace(/[^\d.]/g, "");
-  const parts = clean.split(".");
-  const integerPart = parts[0].replace(/\B(?=(\d{3})+(?!\d))/g, ",");
-  return parts.length > 1 ? `${integerPart}.${parts[1]}` : integerPart;
-}
-const removeCommas = (v: string) => v.replace(/,/g, "");
+  if (!isOpen) return null;
 
-function makeEmptyRow(defaultWalletId: string): TxRow {
-  return {
-    id: crypto.randomUUID(),
-    walletId: defaultWalletId,
-    toWalletId: "",
-    amount: "",
-    displayAmount: "",
-    category: "",
-    categoryEmoji: "",
-    note: "",
-    date: new Date().toISOString().slice(0, 10),
-  };
-}
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!amount || isNaN(Number(amount)) || Number(amount) <= 0) return;
 
-export function AddTransactionSheet({
-  open,
-  onOpenChange,
-  editTransaction,
-  initialWalletId,
-}: Props) {
-  const {
-    t,
-    wallets,
-    defaultWalletId,
-    addTransactions,
-    updateTransaction,
-    getCategoriesFor,
-    addCustomCategory,
-  } = useStore();
+    // สร้างข้อมูลส่งแบบผ่อนปรนที่สุด รองรับทั้งระบบที่ต้องการ category_name และไม่ต้องการ
+    const transactionData: any = {
+      type,
+      amount: Number(amount),
+      wallet_id: walletId,
+      to_wallet_id: type === 'transfer' ? toWalletId : undefined,
+      note,
+      date,
+      category_name: '',
+    };
 
-  const [type, setType] = useState<TxType>("expense");
-  const [rows, setRows] = useState<TxRow[]>(() => [
-    makeEmptyRow(initialWalletId || defaultWalletId),
-  ]);
+    addTransaction(transactionData);
 
-  const [catDialogOpen, setCatDialogOpen] = useState(false);
-  const [catDialogRowId, setCatDialogRowId] = useState<string | null>(null);
-  const [newCatName, setNewCatName] = useState("");
-  const [newCatEmoji, setNewCatEmoji] = useState("");
+    setAmount('');
+    setNote('');
 
-  const categoryOptions = useMemo(() => {
-    if (type === "transfer") return [];
-    return getCategoriesFor(type).map((c) => ({
-      key: c,
-      label: getCategoryLabel(c, t.categories),
-      emoji: DEFAULT_CATEGORY_EMOJI[c] ?? "",
-    }));
-  }, [type, getCategoriesFor, t.categories]);
-
-  const reset = useCallback(() => {
-    setType("expense");
-    setRows([makeEmptyRow(initialWalletId || defaultWalletId)]);
-  }, [defaultWalletId, initialWalletId]);
-
-  useEffect(() => {
-    if (open && editTransaction) {
-      setType(editTransaction.type);
-      setRows([
-        {
-          id: editTransaction.id,
-          walletId: editTransaction.wallet_id,
-          toWalletId: editTransaction.to_wallet_id ?? "",
-          amount: String(editTransaction.amount),
-          displayAmount: formatWithCommas(String(editTransaction.amount)),
-          category: editTransaction.category_name,
-          categoryEmoji: editTransaction.category_emoji ?? "",
-          note: editTransaction.note,
-          date: editTransaction.date,
-        },
-      ]);
-      return;
+    if (!addAnother) {
+      onClose();
     }
-    if (open && !editTransaction) {
-      reset();
-      return;
-    }
-    if (!open && !editTransaction) {
-      reset();
-    }
-  }, [open, editTransaction, reset]);
-
-  // Reset categories when toggling type since lists differ
-  useEffect(() => {
-    if (type === "transfer") return;
-    const valid = new Set(getCategoriesFor(type));
-    setRows((prev) =>
-      prev.map((r) =>
-        r.category && !valid.has(r.category) ? { ...r, category: "", categoryEmoji: "" } : r
-      )
-    );
-  }, [type, getCategoriesFor]);
-
-  const updateRow = (rowId: string, patch: Partial<TxRow>) => {
-    setRows((prev) => prev.map((r) => (r.id === rowId ? { ...r, ...patch } : r)));
   };
 
-  const handleAmountChange = (rowId: string, value: string) => {
-    const clean = removeCommas(value);
-    if (clean && !/^\d*\.?\d*$/.test(clean)) return;
-    updateRow(rowId, { amount: clean, displayAmount: formatWithCommas(clean) });
-  };
-
-  const handleCategoryChange = (rowId: string, value: string) => {
-    if (value === ADD_CATEGORY_SENTINEL) {
-      setCatDialogRowId(rowId);
-      setNewCatName("");
-      setNewCatEmoji("");
-      setCatDialogOpen(true);
-      return;
+  const handleAmountChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const val = e.target.value;
+    if (val === '' || /^\d*\.?\d{0,2}$/.test(val)) {
+      setAmount(val);
     }
-    updateRow(rowId, {
-      category: value,
-      categoryEmoji: DEFAULT_CATEGORY_EMOJI[value] ?? "",
-    });
-  };
-
-  const handleConfirmNewCategory = () => {
-    if (type === "transfer") return;
-    const name = newCatName.trim();
-    if (!name) {
-      toast.error(t.newCategoryPrompt);
-      return;
-    }
-    const ok = addCustomCategory(type, name);
-    if (!ok) {
-      toast.error(t.newCategoryPrompt);
-      return;
-    }
-    if (catDialogRowId) {
-      updateRow(catDialogRowId, {
-        category: name,
-        categoryEmoji: newCatEmoji.trim().slice(0, 8),
-      });
-    }
-    setCatDialogOpen(false);
-    setCatDialogRowId(null);
-    setNewCatName("");
-    setNewCatEmoji("");
-  };
-
-  const addRow = () =>
-    setRows((prev) => [...prev, makeEmptyRow(initialWalletId || defaultWalletId)]);
-  const removeRow = (rowId: string) => {
-    if (rows.length === 1) return;
-    setRows((prev) => prev.filter((r) => r.id !== rowId));
-  };
-
-  const isEditing = Boolean(editTransaction?.id);
-
-  const submit = () => {
-    if (!wallets.length) {
-      toast.error(t.walletRequired);
-      return;
-    }
-    const items: NewTransactionInput[] = [];
-
-    for (const row of rows) {
-      if (!row.amount.trim()) continue;
-      const num = parseFloat(removeCommas(row.amount));
-      if (isNaN(num) || num <= 0) {
-        toast.error(t.amountRequired);
-        return;
-      }
-      if (!row.walletId) {
-        toast.error(t.walletRequired);
-        return;
-      }
-      if (type === "transfer") {
-        if (!row.toWalletId) {
-          toast.error(t.toWalletRequired);
-          return;
-        }
-        if (row.toWalletId === row.walletId) {
-          toast.error(t.sameWalletError);
-          return;
-        }
-      } else if (!row.category) {
-        toast.error(t.categoryRequired);
-        return;
-      }
-
-      items.push({
-        wallet_id: row.walletId,
-        to_wallet_id: type === "transfer" ? row.toWalletId : null,
-        type,
-        amount: num,
-        category_name:
-          type === "transfer" ? (t.transfer as string) : row.category,
-        category_emoji:
-          type === "transfer" ? "🔁" : row.categoryEmoji || "",
-        note: row.note,
-        date: row.date,
-      });
-    }
-
-    if (!items.length) {
-      toast.error(t.amountRequired);
-      return;
-    }
-
-    if (isEditing && editTransaction) {
-      const first = items[0];
-      updateTransaction(editTransaction.id, {
-        wallet_id: first.wallet_id,
-        to_wallet_id: first.to_wallet_id,
-        type: first.type,
-        amount: first.amount,
-        category_name: first.category_name,
-        category_emoji: first.category_emoji,
-        note: first.note,
-        date: first.date,
-      });
-    } else {
-      addTransactions(items);
-    }
-
-    reset();
-    onOpenChange(false);
   };
 
   return (
-    <>
-      <Sheet open={open} onOpenChange={onOpenChange}>
-        <SheetContent
-          side="bottom"
-          className="rounded-t-3xl border-border max-h-[92vh] overflow-y-auto bg-card will-change-transform"
-          style={{ transform: "translateZ(0)" }}
-        >
-          <SheetHeader>
-            <SheetTitle className="text-center">
-              {isEditing ? t.editTransaction : t.addTransaction}
-              {!isEditing && rows.length > 1 && (
-                <span className="ml-2 text-sm font-normal text-muted-foreground">
-                  ({rows.length} {t.itemCount})
-                </span>
-              )}
-            </SheetTitle>
-          </SheetHeader>
+    <div className="fixed inset-0 z-50 flex items-end justify-center bg-black/50 backdrop-blur-sm sm:items-center p-0 sm:p-4 animate-fade-in">
+      <div className="w-full max-w-lg bg-white dark:bg-zinc-900 rounded-t-2xl sm:rounded-2xl shadow-xl border border-zinc-100 dark:border-zinc-800 flex flex-col max-h-[90vh] sm:max-h-[85vh] animate-slide-up">
+        {/* Header */}
+        <div className="flex items-center justify-between px-5 py-4 border-b border-zinc-100 dark:border-zinc-800">
+          <h2 className="text-lg font-bold text-zinc-900 dark:text-zinc-50 flex items-center gap-2">
+            <Plus className="w-5 h-5 text-emerald-500" />
+            {type === 'income' ? t?.income || 'รายรับ' : type === 'expense' ? t?.expense || 'รายจ่าย' : 'โอนเงิน'}
+          </h2>
+          <button onClick={onClose} className="p-1.5 rounded-full hover:bg-zinc-100 dark:hover:bg-zinc-800 text-zinc-400 hover:text-zinc-600 transition-colors">
+            <X className="w-5 h-5" />
+          </button>
+        </div>
 
-          <div className="mt-2 space-y-5 pb-6 px-1">
-            {/* Type Toggle */}
-            <div className="grid grid-cols-3 p-1 rounded-2xl bg-muted gap-1">
-              {(
-                [
-                  { id: "expense" as TxType, label: t.expense, icon: ArrowUpRight, color: "var(--expense)" },
-                  { id: "income" as TxType, label: t.income, icon: ArrowDownLeft, color: "var(--income)" },
-                  { id: "transfer" as TxType, label: t.transfer, icon: ArrowRightLeft, color: "var(--primary)" },
-                ]
-              ).map(({ id, label, icon: Icon, color }) => {
-                const active = type === id;
-                return (
-                  <button
-                    key={id}
-                    onClick={() => setType(id)}
-                    className="flex items-center justify-center gap-1.5 py-2 rounded-xl text-sm font-medium transition-all duration-200"
-                    style={{
-                      background: active ? "var(--card)" : "transparent",
-                      color: active ? color : "var(--muted-foreground)",
-                      boxShadow: active ? "0 1px 3px rgba(0,0,0,0.06)" : "none",
-                    }}
-                  >
-                    <Icon className="h-3.5 w-3.5" />
-                    {label}
-                  </button>
-                );
-              })}
+        {/* Form */}
+        <form onSubmit={handleSubmit} className="flex-1 overflow-y-auto p-5 space-y-4">
+          {/* Segmented Control */}
+          <div className="grid grid-cols-3 gap-1 p-1 bg-zinc-100 dark:bg-zinc-800 rounded-xl">
+            {(['expense', 'income', 'transfer'] as const).map((tType) => (
+              <button
+                key={tType}
+                type="button"
+                onClick={() => setType(tType)}
+                className={`py-2 text-sm font-medium rounded-lg transition-all ${
+                  type === tType
+                    ? 'bg-white dark:bg-zinc-700 text-zinc-900 dark:text-zinc-50 shadow-sm'
+                    : 'text-zinc-500 hover:text-zinc-900 dark:hover:text-zinc-300'
+                }`}
+              >
+                {tType === 'expense' ? t?.expense || 'รายจ่าย' : tType === 'income' ? t?.income || 'รายรับ' : 'โอนเงิน'}
+              </button>
+            ))}
+          </div>
+
+          {/* Amount Input */}
+          <div className="space-y-1.5">
+            <label className="text-xs font-semibold uppercase tracking-wider text-zinc-400 dark:text-zinc-500">จำนวนเงิน</label>
+            <div className="relative flex items-center">
+              <span className="absolute left-4 text-2xl font-bold text-zinc-400">฿</span>
+              <input
+                type="text"
+                inputMode="decimal"
+                value={amount}
+                onChange={handleAmountChange}
+                placeholder="0.00"
+                className="w-full pl-10 pr-4 py-3.5 text-3xl font-bold rounded-xl bg-zinc-50 dark:bg-zinc-800/50 border border-zinc-200 dark:border-zinc-700/60 focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 text-zinc-900 dark:text-zinc-50 transition-all placeholder:text-zinc-300 dark:placeholder:text-zinc-700"
+                required
+                autoFocus
+              />
+            </div>
+          </div>
+
+          {/* Wallet Selectors */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div className="space-y-1.5">
+              <label className="text-xs font-semibold uppercase tracking-wider text-zinc-400 dark:text-zinc-500">
+                {type === 'transfer' ? 'จากกระเป๋า' : 'กระเป๋าเงิน'}
+              </label>
+              <select
+                value={walletId}
+                onChange={(e) => setWalletId(e.target.value)}
+                className="w-full px-3 py-2.5 rounded-xl bg-zinc-50 dark:bg-zinc-800/50 border border-zinc-200 dark:border-zinc-700/60 text-sm focus:outline-none text-zinc-800 dark:text-zinc-200"
+              >
+                {wallets.map((w) => (
+                  <option key={w.id} value={w.id}>{w.name}</option>
+                ))}
+              </select>
             </div>
 
-            {/* Rows */}
-            <div className="space-y-4">
-              {rows.map((row, index) => (
-                <div
-                  key={row.id}
-                  className="relative p-4 rounded-2xl bg-muted/50 border border-border/50 space-y-4"
+            {type === 'transfer' && (
+              <div className="space-y-1.5 animate-fade-in">
+                <label className="text-xs font-semibold uppercase tracking-wider text-zinc-400 dark:text-zinc-500">ไปยังกระเป๋า</label>
+                <select
+                  value={toWalletId}
+                  onChange={(e) => setToWalletId(e.target.value)}
+                  className="w-full px-3 py-2.5 rounded-xl bg-zinc-50 dark:bg-zinc-800/50 border border-zinc-200 dark:border-zinc-700/60 text-sm focus:outline-none text-zinc-800 dark:text-zinc-200"
                 >
-                  {rows.length > 1 && (
-                    <div className="flex items-center justify-between mb-2">
-                      <span className="text-xs font-medium text-muted-foreground">
-                        #{index + 1}
-                      </span>
-                      <button
-                        onClick={() => removeRow(row.id)}
-                        className="p-1.5 rounded-lg hover:bg-destructive/10 text-muted-foreground hover:text-destructive transition-colors"
-                      >
-                        <Trash2 className="h-4 w-4" />
-                      </button>
-                    </div>
-                  )}
-
-                  <div className="space-y-1.5">
-                    <Label>{t.amount}</Label>
-                    <Input
-                      inputMode="decimal"
-                      type="text"
-                      value={row.displayAmount}
-                      onChange={(e) => handleAmountChange(row.id, e.target.value)}
-                      placeholder="0.00"
-                      className="text-2xl h-14 rounded-2xl"
-                    />
-                  </div>
-
-                  {/* Wallets */}
-                  <div className={type === "transfer" ? "grid grid-cols-2 gap-3" : ""}>
-                    <div className="space-y-1.5">
-                      <Label>{type === "transfer" ? t.fromWallet : t.wallet}</Label>
-                      <Select
-                        value={row.walletId || undefined}
-                        onValueChange={(v) => updateRow(row.id, { walletId: v })}
-                      >
-                        <SelectTrigger className="rounded-xl">
-                          <SelectValue placeholder={t.wallet} />
-                        </SelectTrigger>
-                        <SelectContent>
-                          {wallets.map((w) => (
-                            <SelectItem key={w.id} value={w.id}>
-                              <span className="inline-flex items-center gap-2">
-                                <span>{w.emoji}</span>
-                                {w.name}
-                              </span>
-                            </SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
-                    </div>
-
-                    {type === "transfer" && (
-                      <div className="space-y-1.5">
-                        <Label>{t.toWallet}</Label>
-                        <Select
-                          value={row.toWalletId || undefined}
-                          onValueChange={(v) => updateRow(row.id, { toWalletId: v })}
-                        >
-                          <SelectTrigger className="rounded-xl">
-                            <SelectValue placeholder={t.toWallet} />
-                          </SelectTrigger>
-                          <SelectContent>
-                            {wallets
-                              .filter((w) => w.id !== row.walletId)
-                              .map((w) => (
-                                <SelectItem key={w.id} value={w.id}>
-                                  <span className="inline-flex items-center gap-2">
-                                    <span>{w.emoji}</span>
-                                    {w.name}
-                                  </span>
-                                </SelectItem>
-                              ))}
-                          </SelectContent>
-                        </Select>
-                      </div>
-                    )}
-                  </div>
-
-                  {type !== "transfer" && (
-                    <div className="grid grid-cols-[1fr_5rem] gap-3">
-                      <div className="space-y-1.5">
-                        <Label>{t.category}</Label>
-                        <Select
-                          value={row.category || undefined}
-                          onValueChange={(v) => handleCategoryChange(row.id, v)}
-                        >
-                          <SelectTrigger className="rounded-xl">
-                            <SelectValue placeholder={t.selectCategory} />
-                          </SelectTrigger>
-                          <SelectContent>
-                            {categoryOptions.map((opt) => (
-                              <SelectItem key={opt.key} value={opt.key}>
-                                <span className="inline-flex items-center gap-2">
-                                  {opt.emoji && <span>{opt.emoji}</span>}
-                                  {opt.label}
-                                </span>
-                              </SelectItem>
-                            ))}
-                            <SelectItem
-                              value={ADD_CATEGORY_SENTINEL}
-                              className="text-primary font-medium"
-                            >
-                              <span className="flex items-center gap-1.5">
-                                <Plus className="h-3.5 w-3.5" />
-                                {t.addNewCategory}
-                              </span>
-                            </SelectItem>
-                          </SelectContent>
-                        </Select>
-                      </div>
-                      <div className="space-y-1.5">
-                        <Label>{t.walletEmoji}</Label>
-                        <Input
-                          value={row.categoryEmoji}
-                          onChange={(e) =>
-                            updateRow(row.id, {
-                              categoryEmoji: e.target.value.slice(0, 8),
-                            })
-                          }
-                          placeholder={t.emojiPlaceholder}
-                          className="rounded-xl text-center text-lg"
-                          maxLength={8}
-                        />
-                      </div>
-                    </div>
-                  )}
-
-                  <div className="space-y-1.5">
-                    <Label>{t.date}</Label>
-                    <Input
-                      type="date"
-                      value={row.date}
-                      onChange={(e) => updateRow(row.id, { date: e.target.value })}
-                      className="rounded-xl"
-                    />
-                  </div>
-
-                  <div className="space-y-1.5">
-                    <Label>
-                      {t.note}{" "}
-                      <span className="text-xs text-muted-foreground">({t.optional})</span>
-                    </Label>
-                    <Textarea
-                      value={row.note}
-                      onChange={(e) => updateRow(row.id, { note: e.target.value })}
-                      rows={2}
-                      className="rounded-xl resize-none"
-                    />
-                  </div>
-                </div>
-              ))}
-            </div>
-
-            {!isEditing && (
-              <Button
-                variant="outline"
-                onClick={addRow}
-                className="w-full rounded-xl h-11 border-dashed border-2 hover:border-primary hover:bg-primary/5 transition-colors"
-              >
-                <Plus className="h-4 w-4 mr-2" />
-                {t.addAnother}
-              </Button>
+                  {wallets.map((w) => (
+                    <option key={w.id} value={w.id}>{w.name}</option>
+                  ))}
+                </select>
+              </div>
             )}
-
-            <div className="flex gap-3 pt-1">
-              <Button
-                variant="outline"
-                onClick={() => onOpenChange(false)}
-                className="flex-1 rounded-xl h-11"
-              >
-                {t.cancel}
-              </Button>
-              <Button onClick={submit} className="flex-1 rounded-xl h-11">
-                {t.save}
-                {rows.length > 1 && (
-                  <span className="ml-1.5 text-xs opacity-80">({rows.length})</span>
-                )}
-              </Button>
-            </div>
           </div>
-        </SheetContent>
-      </Sheet>
 
-      {/* Custom category dialog */}
-      <Dialog open={catDialogOpen} onOpenChange={setCatDialogOpen}>
-        <DialogContent className="rounded-2xl sm:max-w-sm">
-          <DialogHeader>
-            <DialogTitle>{t.addNewCategory}</DialogTitle>
-          </DialogHeader>
-          <div className="space-y-3 pt-2">
-            <div className="grid grid-cols-[5rem_1fr] gap-2 items-end">
-              <div className="space-y-1.5">
-                <Label>{t.walletEmoji}</Label>
-                <Input
-                  value={newCatEmoji}
-                  onChange={(e) => setNewCatEmoji(e.target.value.slice(0, 8))}
-                  placeholder={t.emojiPlaceholder}
-                  className="rounded-xl h-11 text-center text-lg"
-                  maxLength={8}
-                />
-              </div>
-              <div className="space-y-1.5">
-                <Label htmlFor="new-cat-name">{t.newCategoryPrompt}</Label>
-                <Input
-                  id="new-cat-name"
-                  autoFocus
-                  value={newCatName}
-                  onChange={(e) => setNewCatName(e.target.value)}
-                  placeholder={t.newCategoryPlaceholder}
-                  maxLength={40}
-                  onKeyDown={(e) => {
-                    if (e.key === "Enter") {
-                      e.preventDefault();
-                      handleConfirmNewCategory();
-                    }
-                  }}
-                  className="rounded-xl h-11"
-                />
-              </div>
-            </div>
+          {/* Date Picker */}
+          <div className="space-y-1.5">
+            <label className="text-xs font-semibold uppercase tracking-wider text-zinc-400 dark:text-zinc-500">วันที่</label>
+            <input
+              type="date"
+              value={date}
+              onChange={(e) => setDate(e.target.value)}
+              className="w-full px-3 py-2.5 rounded-xl bg-zinc-50 dark:bg-zinc-800/50 border border-zinc-200 dark:border-zinc-700/60 text-sm focus:outline-none text-zinc-800 dark:text-zinc-200"
+            />
           </div>
-          <DialogFooter className="gap-2 sm:gap-2">
-            <Button
-              variant="outline"
-              onClick={() => setCatDialogOpen(false)}
-              className="rounded-xl"
+
+          {/* Note Input */}
+          <div className="space-y-1.5">
+            <label className="text-xs font-semibold uppercase tracking-wider text-zinc-400 dark:text-zinc-500">บันทึกเพิ่มเติม</label>
+            <input
+              type="text"
+              value={note}
+              onChange={(e) => setNote(e.target.value)}
+              placeholder="บันทึกช่วยจำ..."
+              className="w-full px-4 py-2.5 rounded-xl bg-zinc-50 dark:bg-zinc-800/50 border border-zinc-200 dark:border-zinc-700/60 text-sm focus:outline-none focus:border-emerald-500 text-zinc-900 dark:text-zinc-50 transition-all"
+            />
+          </div>
+
+          {/* Keep Window Open Switch */}
+          <div className="pt-2 flex items-center justify-between">
+            <span className="text-sm text-zinc-500 dark:text-zinc-400">เปิดหน้าต่างนี้ค้างไว้เพื่อกรอกรายการอื่นต่อ</span>
+            <button
+              type="button"
+              onClick={() => setAddAnother(!addAnother)}
+              className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors focus:outline-none ${
+                addAnother ? 'bg-emerald-500' : 'bg-zinc-200 dark:bg-zinc-700'
+              }`}
             >
-              {t.cancel}
-            </Button>
-            <Button onClick={handleConfirmNewCategory} className="rounded-xl">
-              {t.save}
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
-    </>
+              <span className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${
+                addAnother ? 'translate-x-6' : 'translate-x-1'
+              }`} />
+            </button>
+          </div>
+
+          {/* Action Buttons */}
+          <div className="pt-4 flex gap-3">
+            <button
+              type="button"
+              onClick={onClose}
+              className="flex-1 py-3 bg-zinc-100 dark:bg-zinc-800 text-zinc-700 dark:text-zinc-300 font-semibold rounded-xl hover:bg-zinc-200 dark:hover:bg-zinc-700 transition-colors text-sm"
+            >
+              ยกเลิก
+            </button>
+            <button
+              type="submit"
+              disabled={!amount || Number(amount) <= 0}
+              className="flex-1 py-3 bg-gradient-to-r from-emerald-500 to-teal-600 text-white font-semibold rounded-xl shadow-md hover:from-emerald-600 hover:to-teal-700 transition-all text-sm disabled:opacity-50 disabled:pointer-events-none flex items-center justify-center gap-1.5"
+            >
+              <Check className="w-4 h-4" /> บันทึกรายการ
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
   );
 }
+
+// แอบใส่ Default Export เผื่อไว้ป้องกันตัวแอปเวอร์ชันเก่าเรียกหาด้วยครับ
+export default AddTransactionSheet;
