@@ -713,6 +713,10 @@ export function ExpenseProvider({ children }: { children: ReactNode }) {
       localStorage.setItem(LS.customCats, JSON.stringify(customCategories));
   }, [customCategories, hydrated]);
 
+  useEffect(() => {
+    if (hydrated) localStorage.setItem(LS.wallpapers, JSON.stringify(wallpapers));
+  }, [wallpapers, hydrated]);
+
   /* -------- DERIVED -------- */
   const defaultWalletId = wallets[0]?.id ?? "";
 
@@ -888,6 +892,30 @@ export function ExpenseProvider({ children }: { children: ReactNode }) {
     setWallpaperState(w);
     if (w) localStorage.setItem(LS.wallpaper, w);
     else localStorage.removeItem(LS.wallpaper);
+  };
+  const addWallpaper = (dataUrl: string) => {
+    setWallpapersState((prev) => {
+      if (prev.includes(dataUrl)) return prev;
+      const next = [...prev, dataUrl].slice(-5);
+      return next;
+    });
+    setWallpaper(dataUrl);
+  };
+  const removeWallpaper = (idx: number) => {
+    setWallpapersState((prev) => {
+      const next = prev.filter((_, i) => i !== idx);
+      // if active wallpaper was removed, clear it
+      if (prev[idx] && prev[idx] === wallpaper) setWallpaper(null);
+      return next;
+    });
+  };
+  const setActiveWallpaperIndex = (idx: number | null) => {
+    if (idx === null) {
+      setWallpaper(null);
+      return;
+    }
+    const target = wallpapers[idx];
+    if (target) setWallpaper(target);
   };
   const setCurrency = (c: CurrencyCode) => {
     setCurrencyState(c);
