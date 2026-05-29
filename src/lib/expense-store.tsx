@@ -597,8 +597,18 @@ export function ExpenseProvider({ children }: { children: ReactNode }) {
       const th = localStorage.getItem(LS.theme);
       if (th && THEME_PRESETS.some((p) => p.id === th)) setThemeState(th);
       const dm = localStorage.getItem(LS.darkMode);
-      if (dm !== null) setDarkModeState(dm === "true");
       const wp = localStorage.getItem(LS.wallpaper);
+      if (wp) setWallpaperState(wp);
+      const wps = localStorage.getItem(LS.wallpapers);
+      if (wps) {
+        try {
+          const arr = JSON.parse(wps);
+          if (Array.isArray(arr)) setWallpapersState(arr.filter((s) => typeof s === "string").slice(0, 5));
+        } catch {}
+      } else if (wp) {
+        // seed gallery from previously single wallpaper
+        setWallpapersState([wp]);
+      }
       if (wp) setWallpaperState(wp);
       const cur = localStorage.getItem(LS.currency) as CurrencyCode | null;
       if (cur && CURRENCIES.some((c) => c.code === cur)) setCurrencyState(cur);
