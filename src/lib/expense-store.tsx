@@ -576,6 +576,7 @@ export function ExpenseProvider({ children }: { children: ReactNode }) {
   const [darkMode, setDarkModeState] = useState<boolean>(false);
   const [lang, setLangState] = useState<Lang>("en");
   const [wallpaper, setWallpaperState] = useState<string | null>(null);
+  const [wallpapers, setWallpapersState] = useState<string[]>([]);
   const [currency, setCurrencyState] = useState<CurrencyCode>("THB");
   const [customCategories, setCustomCategories] = useState<CustomCategories>({
     income: [],
