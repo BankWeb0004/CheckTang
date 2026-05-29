@@ -1,203 +1,352 @@
-import React, { useState } from 'react';
-import { useStore } from '../../lib/expense-store';
-import { X, Plus, Check } from 'lucide-react';
+import { useEffect, useMemo, useState } from "react";
+import {
+  useStore,
+  Transaction,
+  TxType,
+  getCategoryLabel,
+  DEFAULT_CATEGORY_EMOJI,
+} from "@/lib/expense-store";
+import {
+  Sheet,
+  SheetContent,
+  SheetHeader,
+  SheetTitle,
+} from "@/components/ui/sheet";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { toast } from "sonner";
+import { ArrowDownLeft, ArrowRightLeft, ArrowUpRight, Plus } from "lucide-react";
 
-interface AddTransactionSheetProps {
-  isOpen: boolean;
-  onClose: () => void;
+interface Props {
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
+  editTransaction?: Transaction | null;
+  initialWalletId?: string | null;
+  initialType?: TxType;
 }
 
-export function AddTransactionSheet({ isOpen, onClose }: AddTransactionSheetProps) {
-  const { wallets = [], addTransaction, t } = useStore();
+export function AddTransactionSheet({
+  open,
+  onOpenChange,
+  editTransaction,
+  initialWalletId,
+  initialType,
+}: Props) {
+  const {
+    t,
+    lang,
+    wallets,
+    addTransaction,
+    updateTransaction,
+    getCategoriesFor,
+    addCustomCategory,
+    defaultWalletId,
+  } = useStore();
 
-  const [type, setType] = useState<'income' | 'expense' | 'transfer'>('expense');
-  const [amount, setAmount] = useState('');
-  const [walletId, setWalletId] = useState(wallets[0]?.id || '');
-  const [toWalletId, setToWalletId] = useState(wallets[1]?.id || wallets[0]?.id || '');
-  const [note, setNote] = useState('');
-  const [date, setDate] = useState(new Date().toISOString().split('T')[0]);
-  const [addAnother, setAddAnother] = useState(false);
+  const [type, setType] = useState<TxType>("expense");
+  const [amount, setAmount] = useState("");
+  const [walletId, setWalletId] = useState<string>("");
+  const [toWalletId, setToWalletId] = useState<string>("");
+  const [category, setCategory] = useState<string>("");
+  const [note, setNote] = useState("");
+  const [date, setDate] = useState<string>(new Date().toISOString().slice(0, 10));
 
-  if (!isOpen) return null;
+  const isEdit = !!editTransaction;
 
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!amount || isNaN(Number(amount)) || Number(amount) <= 0) return;
+  // Hydrate when opening
+  useEffect(() => {
+    if (!open) return;
+    if (editTransaction) {
+      setType(editTransaction.type);
+      setAmount(String(editTransaction.amount));
+      setWalletId(editTransaction.wallet_id);
+      setToWalletId(editTransaction.to_wallet_id ?? "");
+      setCategory(editTransaction.category_name);
+      setNote(editTransaction.note);
+      setDate(editTransaction.date);
+    } else {
+      setType(initialType ?? "expense");
+      setAmount("");
+      setWalletId(initialWalletId || defaultWalletId || wallets[0]?.id || "");
+      setToWalletId("");
+      setCategory("");
+      setNote("");
+      setDate(new Date().toISOString().slice(0, 10));
+    }
+  }, [open, editTransaction, initialWalletId, initialType, defaultWalletId, wallets]);
 
-    // สร้างข้อมูลส่งแบบผ่อนปรนที่สุด รองรับทั้งระบบที่ต้องการ category_name และไม่ต้องการ
-    const transactionData: any = {
-      type,
-      amount: Number(amount),
+  const categories = useMemo(() => getCategoriesFor(type), [type, getCategoriesFor]);
+
+  const submit = () => {
+    const amt = parseFloat(amount);
+    if (!amt || amt <= 0 || isNaN(amt)) {
+      toast.error(t.amountRequired);
+      return;
+    }
+    if (!walletId) {
+      toast.error(t.walletRequired);
+      return;
+    }
+    if (type === "transfer") {
+      if (!toWalletId) {
+        toast.error(t.toWalletRequired);
+        return;
+      }
+      if (toWalletId === walletId) {
+        toast.error(t.sameWalletError);
+        return;
+      }
+    } else {
+      if (!category) {
+        toast.error(t.categoryRequired);
+        return;
+      }
+    }
+
+    const payload = {
       wallet_id: walletId,
-      to_wallet_id: type === 'transfer' ? toWalletId : undefined,
+      to_wallet_id: type === "transfer" ? toWalletId : null,
+      type,
+      amount: amt,
+      category_name:
+        type === "transfer"
+          ? lang === "th"
+            ? "โอนเงิน"
+            : "Transfer"
+          : category,
+      category_emoji:
+        type === "transfer"
+          ? "🔁"
+          : DEFAULT_CATEGORY_EMOJI[category] ??
+            (category.match(/\p{Emoji}/u)?.[0] ?? ""),
       note,
       date,
-      category_name: '',
     };
 
-    addTransaction(transactionData);
+    if (isEdit && editTransaction) {
+      updateTransaction(editTransaction.id, payload);
+      toast.success(lang === "th" ? "บันทึกการแก้ไขแล้ว" : "Updated");
+    } else {
+      addTransaction(payload);
+      toast.success(lang === "th" ? "บันทึกแล้ว" : "Saved");
+    }
 
-    setAmount('');
-    setNote('');
+    onOpenChange(false);
+  };
 
-    if (!addAnother) {
-      onClose();
+  const handleAddCategory = () => {
+    if (type === "transfer") return;
+    const name = window.prompt(t.newCategoryPrompt);
+    if (!name) return;
+    const trimmed = name.trim();
+    if (!trimmed) return;
+    const ok = addCustomCategory(type, trimmed);
+    if (ok) {
+      setCategory(trimmed);
+      toast.success(lang === "th" ? "เพิ่มหมวดหมู่แล้ว" : "Category added");
+    } else {
+      toast.error(lang === "th" ? "ไม่สำเร็จ" : "Could not add");
     }
   };
 
-  const handleAmountChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const val = e.target.value;
-    if (val === '' || /^\d*\.?\d{0,2}$/.test(val)) {
-      setAmount(val);
-    }
+  const typeBtn = (val: TxType, icon: React.ReactNode, label: string, color: string) => {
+    const active = type === val;
+    return (
+      <button
+        type="button"
+        onClick={() => setType(val)}
+        className="flex items-center justify-center gap-1.5 py-2.5 rounded-xl text-sm font-medium transition-all duration-200"
+        style={{
+          background: active ? color : "transparent",
+          color: active ? "#fff" : "var(--muted-foreground)",
+          boxShadow: active ? "0 4px 12px -4px " + color : "none",
+        }}
+      >
+        {icon}
+        {label}
+      </button>
+    );
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-end justify-center bg-black/50 backdrop-blur-sm sm:items-center p-0 sm:p-4 animate-fade-in">
-      <div className="w-full max-w-lg bg-white dark:bg-zinc-900 rounded-t-2xl sm:rounded-2xl shadow-xl border border-zinc-100 dark:border-zinc-800 flex flex-col max-h-[90vh] sm:max-h-[85vh] animate-slide-up">
-        {/* Header */}
-        <div className="flex items-center justify-between px-5 py-4 border-b border-zinc-100 dark:border-zinc-800">
-          <h2 className="text-lg font-bold text-zinc-900 dark:text-zinc-50 flex items-center gap-2">
-            <Plus className="w-5 h-5 text-emerald-500" />
-            {type === 'income' ? t?.income || 'รายรับ' : type === 'expense' ? t?.expense || 'รายจ่าย' : 'โอนเงิน'}
-          </h2>
-          <button onClick={onClose} className="p-1.5 rounded-full hover:bg-zinc-100 dark:hover:bg-zinc-800 text-zinc-400 hover:text-zinc-600 transition-colors">
-            <X className="w-5 h-5" />
-          </button>
-        </div>
+    <Sheet open={open} onOpenChange={onOpenChange}>
+      <SheetContent side="bottom" className="rounded-t-3xl max-h-[92vh] overflow-y-auto">
+        <SheetHeader>
+          <SheetTitle className="text-center text-base font-semibold">
+            {isEdit ? t.editTransaction : t.addTransaction}
+          </SheetTitle>
+        </SheetHeader>
 
-        {/* Form */}
-        <form onSubmit={handleSubmit} className="flex-1 overflow-y-auto p-5 space-y-4">
-          {/* Segmented Control */}
-          <div className="grid grid-cols-3 gap-1 p-1 bg-zinc-100 dark:bg-zinc-800 rounded-xl">
-            {(['expense', 'income', 'transfer'] as const).map((tType) => (
-              <button
-                key={tType}
-                type="button"
-                onClick={() => setType(tType)}
-                className={`py-2 text-sm font-medium rounded-lg transition-all ${
-                  type === tType
-                    ? 'bg-white dark:bg-zinc-700 text-zinc-900 dark:text-zinc-50 shadow-sm'
-                    : 'text-zinc-500 hover:text-zinc-900 dark:hover:text-zinc-300'
-                }`}
-              >
-                {tType === 'expense' ? t?.expense || 'รายจ่าย' : tType === 'income' ? t?.income || 'รายรับ' : 'โอนเงิน'}
-              </button>
-            ))}
+        <div className="mt-3 space-y-4 pb-6">
+          {/* Type toggle */}
+          <div className="grid grid-cols-3 gap-1.5 p-1 rounded-2xl bg-muted">
+            {typeBtn(
+              "expense",
+              <ArrowUpRight className="h-4 w-4" />,
+              t.expense,
+              "var(--expense)"
+            )}
+            {typeBtn(
+              "income",
+              <ArrowDownLeft className="h-4 w-4" />,
+              t.income,
+              "var(--income)"
+            )}
+            {typeBtn(
+              "transfer",
+              <ArrowRightLeft className="h-4 w-4" />,
+              t.transfer,
+              "var(--primary)"
+            )}
           </div>
 
-          {/* Amount Input */}
+          {/* Amount */}
           <div className="space-y-1.5">
-            <label className="text-xs font-semibold uppercase tracking-wider text-zinc-400 dark:text-zinc-500">จำนวนเงิน</label>
-            <div className="relative flex items-center">
-              <span className="absolute left-4 text-2xl font-bold text-zinc-400">฿</span>
-              <input
-                type="text"
-                inputMode="decimal"
-                value={amount}
-                onChange={handleAmountChange}
-                placeholder="0.00"
-                className="w-full pl-10 pr-4 py-3.5 text-3xl font-bold rounded-xl bg-zinc-50 dark:bg-zinc-800/50 border border-zinc-200 dark:border-zinc-700/60 focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 text-zinc-900 dark:text-zinc-50 transition-all placeholder:text-zinc-300 dark:placeholder:text-zinc-700"
-                required
-                autoFocus
-              />
-            </div>
+            <Label className="text-xs">{t.amount}</Label>
+            <Input
+              type="text"
+              inputMode="decimal"
+              value={amount}
+              onChange={(e) => {
+                const v = e.target.value;
+                if (v === "" || /^\d*\.?\d{0,2}$/.test(v)) setAmount(v);
+              }}
+              placeholder="0.00"
+              className="h-14 text-2xl font-semibold rounded-2xl text-center"
+              autoFocus
+            />
           </div>
 
-          {/* Wallet Selectors */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          {/* Wallets */}
+          <div className={`grid gap-3 ${type === "transfer" ? "grid-cols-2" : "grid-cols-1"}`}>
             <div className="space-y-1.5">
-              <label className="text-xs font-semibold uppercase tracking-wider text-zinc-400 dark:text-zinc-500">
-                {type === 'transfer' ? 'จากกระเป๋า' : 'กระเป๋าเงิน'}
-              </label>
-              <select
-                value={walletId}
-                onChange={(e) => setWalletId(e.target.value)}
-                className="w-full px-3 py-2.5 rounded-xl bg-zinc-50 dark:bg-zinc-800/50 border border-zinc-200 dark:border-zinc-700/60 text-sm focus:outline-none text-zinc-800 dark:text-zinc-200"
-              >
-                {wallets.map((w) => (
-                  <option key={w.id} value={w.id}>{w.name}</option>
-                ))}
-              </select>
+              <Label className="text-xs">
+                {type === "transfer" ? t.fromWallet : t.wallet}
+              </Label>
+              <Select value={walletId} onValueChange={setWalletId}>
+                <SelectTrigger className="h-11 rounded-xl">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  {wallets.map((w) => (
+                    <SelectItem key={w.id} value={w.id}>
+                      {w.emoji} {w.name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
             </div>
 
-            {type === 'transfer' && (
-              <div className="space-y-1.5 animate-fade-in">
-                <label className="text-xs font-semibold uppercase tracking-wider text-zinc-400 dark:text-zinc-500">ไปยังกระเป๋า</label>
-                <select
-                  value={toWalletId}
-                  onChange={(e) => setToWalletId(e.target.value)}
-                  className="w-full px-3 py-2.5 rounded-xl bg-zinc-50 dark:bg-zinc-800/50 border border-zinc-200 dark:border-zinc-700/60 text-sm focus:outline-none text-zinc-800 dark:text-zinc-200"
-                >
-                  {wallets.map((w) => (
-                    <option key={w.id} value={w.id}>{w.name}</option>
-                  ))}
-                </select>
+            {type === "transfer" && (
+              <div className="space-y-1.5">
+                <Label className="text-xs">{t.toWallet}</Label>
+                <Select value={toWalletId} onValueChange={setToWalletId}>
+                  <SelectTrigger className="h-11 rounded-xl">
+                    <SelectValue placeholder="—" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {wallets
+                      .filter((w) => w.id !== walletId)
+                      .map((w) => (
+                        <SelectItem key={w.id} value={w.id}>
+                          {w.emoji} {w.name}
+                        </SelectItem>
+                      ))}
+                  </SelectContent>
+                </Select>
               </div>
             )}
           </div>
 
-          {/* Date Picker */}
-          <div className="space-y-1.5">
-            <label className="text-xs font-semibold uppercase tracking-wider text-zinc-400 dark:text-zinc-500">วันที่</label>
-            <input
-              type="date"
-              value={date}
-              onChange={(e) => setDate(e.target.value)}
-              className="w-full px-3 py-2.5 rounded-xl bg-zinc-50 dark:bg-zinc-800/50 border border-zinc-200 dark:border-zinc-700/60 text-sm focus:outline-none text-zinc-800 dark:text-zinc-200"
-            />
+          {/* Category */}
+          {type !== "transfer" && (
+            <div className="space-y-1.5">
+              <Label className="text-xs">{t.category}</Label>
+              <div className="flex flex-wrap gap-1.5">
+                {categories.map((cat) => {
+                  const active = cat === category;
+                  const label = getCategoryLabel(cat, t.categories);
+                  const emoji =
+                    DEFAULT_CATEGORY_EMOJI[cat] ??
+                    cat.match(/\p{Emoji}/u)?.[0] ??
+                    "🏷️";
+                  return (
+                    <button
+                      key={cat}
+                      type="button"
+                      onClick={() => setCategory(cat)}
+                      className="px-3 py-1.5 rounded-xl text-xs font-medium transition-colors border"
+                      style={{
+                        background: active ? "var(--primary)" : "var(--card)",
+                        color: active ? "var(--primary-foreground)" : "var(--foreground)",
+                        borderColor: active ? "var(--primary)" : "var(--border)",
+                      }}
+                    >
+                      <span className="mr-1">{emoji}</span>
+                      {label}
+                    </button>
+                  );
+                })}
+                <button
+                  type="button"
+                  onClick={handleAddCategory}
+                  className="px-3 py-1.5 rounded-xl text-xs font-medium border border-dashed border-border text-muted-foreground hover:text-foreground"
+                >
+                  <Plus className="h-3 w-3 inline mr-1" />
+                  {t.addNewCategory}
+                </button>
+              </div>
+            </div>
+          )}
+
+          {/* Date + Note */}
+          <div className="grid grid-cols-2 gap-3">
+            <div className="space-y-1.5">
+              <Label className="text-xs">{t.date}</Label>
+              <Input
+                type="date"
+                value={date}
+                onChange={(e) => setDate(e.target.value)}
+                className="h-11 rounded-xl"
+              />
+            </div>
+            <div className="space-y-1.5">
+              <Label className="text-xs">
+                {t.note} <span className="text-muted-foreground">({t.optional})</span>
+              </Label>
+              <Input
+                type="text"
+                value={note}
+                onChange={(e) => setNote(e.target.value)}
+                className="h-11 rounded-xl"
+              />
+            </div>
           </div>
 
-          {/* Note Input */}
-          <div className="space-y-1.5">
-            <label className="text-xs font-semibold uppercase tracking-wider text-zinc-400 dark:text-zinc-500">บันทึกเพิ่มเติม</label>
-            <input
-              type="text"
-              value={note}
-              onChange={(e) => setNote(e.target.value)}
-              placeholder="บันทึกช่วยจำ..."
-              className="w-full px-4 py-2.5 rounded-xl bg-zinc-50 dark:bg-zinc-800/50 border border-zinc-200 dark:border-zinc-700/60 text-sm focus:outline-none focus:border-emerald-500 text-zinc-900 dark:text-zinc-50 transition-all"
-            />
-          </div>
-
-          {/* Keep Window Open Switch */}
-          <div className="pt-2 flex items-center justify-between">
-            <span className="text-sm text-zinc-500 dark:text-zinc-400">เปิดหน้าต่างนี้ค้างไว้เพื่อกรอกรายการอื่นต่อ</span>
-            <button
-              type="button"
-              onClick={() => setAddAnother(!addAnother)}
-              className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors focus:outline-none ${
-                addAnother ? 'bg-emerald-500' : 'bg-zinc-200 dark:bg-zinc-700'
-              }`}
+          <div className="flex gap-2 pt-2">
+            <Button
+              variant="outline"
+              className="flex-1 h-12 rounded-xl"
+              onClick={() => onOpenChange(false)}
             >
-              <span className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${
-                addAnother ? 'translate-x-6' : 'translate-x-1'
-              }`} />
-            </button>
+              {t.cancel}
+            </Button>
+            <Button className="flex-1 h-12 rounded-xl text-base font-semibold" onClick={submit}>
+              {t.save}
+            </Button>
           </div>
-
-          {/* Action Buttons */}
-          <div className="pt-4 flex gap-3">
-            <button
-              type="button"
-              onClick={onClose}
-              className="flex-1 py-3 bg-zinc-100 dark:bg-zinc-800 text-zinc-700 dark:text-zinc-300 font-semibold rounded-xl hover:bg-zinc-200 dark:hover:bg-zinc-700 transition-colors text-sm"
-            >
-              ยกเลิก
-            </button>
-            <button
-              type="submit"
-              disabled={!amount || Number(amount) <= 0}
-              className="flex-1 py-3 bg-gradient-to-r from-emerald-500 to-teal-600 text-white font-semibold rounded-xl shadow-md hover:from-emerald-600 hover:to-teal-700 transition-all text-sm disabled:opacity-50 disabled:pointer-events-none flex items-center justify-center gap-1.5"
-            >
-              <Check className="w-4 h-4" /> บันทึกรายการ
-            </button>
-          </div>
-        </form>
-      </div>
-    </div>
+        </div>
+      </SheetContent>
+    </Sheet>
   );
 }
 
-// แอบใส่ Default Export เผื่อไว้ป้องกันตัวแอปเวอร์ชันเก่าเรียกหาด้วยครับ
 export default AddTransactionSheet;

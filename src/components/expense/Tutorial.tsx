@@ -1,18 +1,19 @@
 import { useEffect, useState } from "react";
 import useEmblaCarousel from "embla-carousel-react";
-import { useStore } from "@/lib/expense-store";
 import { CheckTangLogo } from "@/components/expense/CheckTangLogo";
-import { Button } from "@/components/ui/button";
-import { Calculator, PieChart, Sparkles, X, ChevronLeft, ChevronRight } from "lucide-react";
+import { Check, ChevronRight, X } from "lucide-react";
 
 interface Props {
   open: boolean;
   onClose: () => void;
 }
 
+/**
+ * Universal textless onboarding carousel.
+ * Visual-only — no body text. Navigated with chevron-right between slides
+ * and a final checkmark to enter the app.
+ */
 export function Tutorial({ open, onClose }: Props) {
-  const { t } = useStore();
-  const tut = t.tutorial;
   const [emblaRef, emblaApi] = useEmblaCarousel({ loop: false, align: "center" });
   const [selected, setSelected] = useState(0);
 
@@ -36,131 +37,126 @@ export function Tutorial({ open, onClose }: Props) {
   if (!open) return null;
 
   const slides = [
-    {
-      visual: (
-        <div className="flex items-center justify-center text-foreground">
-          <CheckTangLogo />
+    // Slide 1 — logo
+    <div key="s1" className="flex flex-col items-center justify-center gap-6 text-foreground">
+      <div className="h-44 w-44 rounded-[2rem] bg-primary/10 flex items-center justify-center">
+        <CheckTangLogo showLabel={false} className="text-primary" />
+      </div>
+      <div className="flex gap-3 text-3xl">💰 ✨ 📊</div>
+    </div>,
+
+    // Slide 2 — wallet with coins + floating category emojis
+    <div key="s2" className="flex flex-col items-center justify-center gap-6">
+      <div className="relative h-44 w-56">
+        <div
+          className="absolute inset-x-4 bottom-2 h-24 rounded-2xl"
+          style={{
+            background: "linear-gradient(135deg, var(--primary), color-mix(in oklab, var(--primary) 60%, white))",
+            boxShadow: "0 10px 24px -8px color-mix(in oklab, var(--primary) 50%, transparent)",
+          }}
+        />
+        <div className="absolute left-1/2 -translate-x-1/2 top-14 text-4xl">👛</div>
+        <div className="absolute left-2 top-2 text-3xl animate-pulse">🍔</div>
+        <div className="absolute right-4 top-0 text-3xl animate-bounce">🚗</div>
+        <div className="absolute left-10 top-10 text-2xl">🛍️</div>
+        <div className="absolute right-2 top-12 text-2xl">🏠</div>
+      </div>
+      <div className="flex items-center gap-2">
+        <span className="h-2 w-12 rounded-full bg-primary/30" />
+        <span className="h-2 w-2 rounded-full bg-primary" />
+        <span className="h-2 w-12 rounded-full bg-primary/30" />
+      </div>
+    </div>,
+
+    // Slide 3 — chart morphing into transaction blocks
+    <div key="s3" className="flex flex-col items-center justify-center gap-6">
+      <div className="relative h-44 w-56 flex items-center gap-4 justify-center">
+        {/* donut */}
+        <svg viewBox="0 0 80 80" className="h-32 w-32">
+          <circle cx="40" cy="40" r="30" fill="none" stroke="var(--muted)" strokeWidth="14" />
+          <circle
+            cx="40"
+            cy="40"
+            r="30"
+            fill="none"
+            stroke="var(--primary)"
+            strokeWidth="14"
+            strokeDasharray="120 188"
+            transform="rotate(-90 40 40)"
+          />
+          <circle
+            cx="40"
+            cy="40"
+            r="30"
+            fill="none"
+            stroke="var(--income)"
+            strokeWidth="14"
+            strokeDasharray="40 188"
+            strokeDashoffset="-120"
+            transform="rotate(-90 40 40)"
+          />
+        </svg>
+        <ChevronRight className="h-6 w-6 text-muted-foreground" />
+        <div className="flex flex-col gap-1.5">
+          <div className="h-3 w-20 rounded-full bg-primary/70" />
+          <div className="h-3 w-16 rounded-full bg-income/70" style={{ background: "var(--income)" }} />
+          <div className="h-3 w-24 rounded-full bg-expense/70" style={{ background: "var(--expense)" }} />
+          <div className="h-3 w-14 rounded-full bg-muted" />
         </div>
-      ),
-      title: tut.s1Title,
-      body: tut.s1Body,
-    },
-    {
-      visual: (
-        <div className="flex items-center justify-center">
-          <div className="w-full max-w-[220px] rounded-3xl border border-border bg-muted/10 p-3 text-left">
-            <div className="flex gap-2 mb-3">
-              <span className="rounded-full bg-primary/10 text-primary text-[11px] px-2 py-1">รายรับ</span>
-              <span className="rounded-full bg-muted/20 text-muted-foreground text-[11px] px-2 py-1">รายจ่าย</span>
-            </div>
-            <div className="rounded-2xl bg-background border border-border p-3">
-              <div className="h-9 rounded-2xl bg-slate-100 text-[11px] text-muted-foreground flex items-center justify-center">
-                เลือกหมวดหมู่
-              </div>
-              <div className="mt-3 grid grid-cols-3 gap-2 text-[11px] text-muted-foreground">
-                <span className="col-span-3 rounded-2xl bg-primary/10 text-primary py-2 text-center">หมวดหมู่</span>
-                <span className="rounded-2xl bg-background border border-border py-2 text-center">กิน</span>
-                <span className="rounded-2xl bg-background border border-border py-2 text-center">เดินทาง</span>
-                <span className="rounded-2xl bg-background border border-border py-2 text-center">อื่นๆ</span>
-              </div>
-            </div>
-            <div className="mt-3 grid grid-cols-3 gap-2 text-center text-sm font-semibold">
-              {['1', '2', '3', '4', '5', '6', '7', '8', '9', ',', '0', '⌫'].map((label) => (
-                <div key={label} className="rounded-2xl bg-background border border-border py-2">{label}</div>
-              ))}
-            </div>
-          </div>
+      </div>
+    </div>,
+
+    // Slide 4 — big + button
+    <div key="s4" className="flex flex-col items-center justify-center gap-6">
+      <div className="h-36 w-36 rounded-full bg-primary/15 flex items-center justify-center">
+        <div
+          className="h-24 w-24 rounded-full text-white flex items-center justify-center text-5xl font-light"
+          style={{
+            background: "var(--primary)",
+            boxShadow: "0 16px 36px -12px color-mix(in oklab, var(--primary) 60%, transparent)",
+          }}
+        >
+          +
         </div>
-      ),
-      title: tut.s2Title,
-      body: tut.s2Body,
-    },
-    {
-      visual: (
-        <div className="flex items-center justify-center">
-          <div className="w-full max-w-[220px] rounded-3xl border border-border bg-muted/10 p-4">
-            <div className="h-20 rounded-3xl bg-slate-200 relative overflow-hidden">
-              <div className="absolute inset-y-0 left-0 w-1/2 bg-primary/70 rounded-r-full" />
-              <div className="absolute inset-y-0 right-0 w-1/3 bg-amber-400/80 rounded-l-full" />
-            </div>
-            <div className="mt-3 grid grid-cols-2 gap-2 text-[11px] text-muted-foreground">
-              <div className="rounded-2xl bg-background border border-border p-2">ยอดรวม</div>
-              <div className="rounded-2xl bg-background border border-border p-2">รายรับ-รายจ่าย</div>
-              <div className="rounded-2xl bg-background border border-border p-2">วงกลมสรุป</div>
-              <div className="rounded-2xl bg-background border border-border p-2">เห็นชัดเลย</div>
-            </div>
-          </div>
-        </div>
-      ),
-      title: tut.s3Title,
-      body: tut.s3Body,
-    },
-    {
-      visual: (
-        <div className="flex flex-col items-center justify-center gap-4">
-          <div className="h-28 w-28 rounded-full bg-primary/10 shadow-[0_0_0_18px_rgba(59,130,246,0.18)] flex items-center justify-center">
-            <div className="h-16 w-16 rounded-full bg-primary text-white flex items-center justify-center text-2xl font-bold">+</div>
-          </div>
-          <div className="text-sm font-semibold text-primary">กดเลยตรงนี้</div>
-        </div>
-      ),
-      title: tut.s4Title,
-      body: tut.s4Body,
-    },
+      </div>
+      <div className="text-5xl">🎉</div>
+    </div>,
   ];
 
   const isLast = selected === slides.length - 1;
 
   return (
     <div className="fixed inset-0 z-[100] bg-background flex flex-col">
-      {/* Skip */}
+      {/* Top bar */}
       <div className="flex items-center justify-between p-4">
-        <span className="text-xs font-semibold tracking-widest text-muted-foreground">
+        <span className="text-[11px] font-semibold tracking-widest text-muted-foreground">
           {selected + 1} / {slides.length}
         </span>
-        {!isLast ? (
-          <button
-            onClick={onClose}
-            className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors px-3 py-1.5 rounded-lg"
-          >
-            {tut.skip}
-          </button>
-        ) : (
-          <button
-            onClick={onClose}
-            aria-label="close"
-            className="text-muted-foreground hover:text-foreground transition-colors p-1.5 rounded-lg"
-          >
-            <X className="h-5 w-5" />
-          </button>
-        )}
+        <button
+          onClick={onClose}
+          aria-label="close"
+          className="text-muted-foreground hover:text-foreground transition-colors p-1.5 rounded-lg"
+        >
+          <X className="h-5 w-5" />
+        </button>
       </div>
 
       {/* Slides */}
       <div className="flex-1 overflow-hidden" ref={emblaRef}>
         <div className="flex h-full">
           {slides.map((s, i) => (
-            <div key={i} className="flex-[0_0_100%] min-w-0 h-full flex flex-col items-center justify-between px-8 py-4">
-              <div className="max-w-md w-full flex flex-col items-center text-center gap-8">
-                <div className="w-full max-w-[320px] rounded-3xl p-3 bg-muted/10 border border-border shadow-sm overflow-hidden">
-                  {s.visual}
-                </div>
-                <div className="w-full px-2">
-                  <h2 className="text-3xl font-bold tracking-tight text-foreground">
-                    {s.title}
-                  </h2>
-                  <p className="text-base text-muted-foreground leading-relaxed mt-3">
-                    {s.body}
-                  </p>
-                </div>
-              </div>
+            <div
+              key={i}
+              className="flex-[0_0_100%] min-w-0 h-full flex items-center justify-center px-8 py-4"
+            >
+              {s}
             </div>
           ))}
         </div>
       </div>
 
       {/* Dots */}
-      <div className="flex items-center justify-center gap-2 py-4">
+      <div className="flex items-center justify-center gap-2 py-3">
         {slides.map((_, i) => (
           <button
             key={i}
@@ -175,28 +171,22 @@ export function Tutorial({ open, onClose }: Props) {
         ))}
       </div>
 
-      {/* Nav */}
-      <div className="p-5 pb-8 flex items-center gap-3">
-        {selected > 0 && (
-          <Button
-            variant="outline"
-            onClick={() => emblaApi?.scrollPrev()}
-            className="rounded-2xl h-12 px-5"
-          >
-            <ChevronLeft className="h-4 w-4 mr-1" />
-            {tut.back}
-          </Button>
-        )}
-        <Button
+      {/* Nav button (icon-only) */}
+      <div className="p-6 pb-10 flex items-center justify-center">
+        <button
           onClick={() => {
             if (isLast) onClose();
             else emblaApi?.scrollNext();
           }}
-          className="flex-1 rounded-2xl h-12 text-base font-semibold"
+          aria-label={isLast ? "done" : "next"}
+          className="h-16 w-16 rounded-full text-white flex items-center justify-center transition-transform hover:scale-105 active:scale-95"
+          style={{
+            background: "var(--primary)",
+            boxShadow: "0 14px 30px -10px color-mix(in oklab, var(--primary) 60%, transparent)",
+          }}
         >
-          {isLast ? tut.getStarted : tut.next}
-          {!isLast && <ChevronRight className="h-4 w-4 ml-1" />}
-        </Button>
+          {isLast ? <Check className="h-7 w-7" /> : <ChevronRight className="h-7 w-7" />}
+        </button>
       </div>
     </div>
   );

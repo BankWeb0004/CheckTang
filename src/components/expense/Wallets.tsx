@@ -1,114 +1,105 @@
-import React, { useState } from 'react';
-import { useStore } from '../../lib/expense-store';
-import { Wallet as WalletIcon, Plus, Trash2, Layers } from 'lucide-react';
+import { useState } from "react";
+import { useStore } from "@/lib/expense-store";
+import { SmartAmount } from "@/components/expense/SmartAmount";
+import { Card } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Plus, Trash2 } from "lucide-react";
+import { toast } from "sonner";
 
-export function Wallets() {
-  const { wallets, transactions, addWallet, deleteWallet, t } = useStore();
-  const [newWalletName, setNewWalletName] = useState('');
+interface Props {
+  onOpenWallet?: (walletId: string) => void;
+}
 
-  // คำนวณยอดเงินของแต่ละกระเป๋าแบบ Real-time
-  const getWalletBalance = (walletId: string) => {
-    let balance = 0;
-    transactions.forEach((tx) => {
-      if (tx.wallet_id === walletId) {
-        if (tx.type === 'expense' || tx.type === 'transfer') balance -= tx.amount;
-        if (tx.type === 'income') balance += tx.amount;
-      }
-      if (tx.type === 'transfer' && tx.to_wallet_id === walletId) {
-        balance += tx.amount;
-      }
-    });
-    return balance;
-  };
+export function Wallets({ onOpenWallet }: Props) {
+  const { walletsWithBalance, addWallet, deleteWallet, t, lang } = useStore();
+  const [name, setName] = useState("");
+  const [emoji, setEmoji] = useState("👛");
 
-  const handleAddWallet = (e: React.FormEvent) => {
+  const handleAdd = (e: React.FormEvent) => {
     e.preventDefault();
-    if (!newWalletName.trim()) return;
-    
-    // ส่งอาร์กิวเมนต์แบบรองรับโครงสร้างดั้งเดิม (2 arguments ตามสโตร์เดิมของคุณแบงค์)
-    addWallet(newWalletName.trim(), '💳');
-    setNewWalletName('');
+    const n = name.trim();
+    if (!n) return;
+    const w = addWallet(n, emoji.trim() || "👛");
+    if (w) {
+      setName("");
+      setEmoji("👛");
+      toast.success(lang === "th" ? "เพิ่มกระเป๋าแล้ว" : "Wallet added");
+    }
   };
-
-  const totalBalance = wallets.reduce((acc, w) => acc + getWalletBalance(w.id), 0);
 
   return (
-    <div className="space-y-6">
-      {/* Overview Balance Card */}
-      <div className="bg-gradient-to-br from-zinc-900 via-zinc-800 to-zinc-950 dark:from-zinc-950 dark:via-zinc-900 dark:to-black p-6 rounded-2xl shadow-lg border border-zinc-800 relative overflow-hidden text-white">
-        <div className="absolute top-0 right-0 p-6 opacity-10">
-          <Layers className="w-32 h-32" />
-        </div>
-        <p className="text-xs font-semibold uppercase tracking-widest text-zinc-400">สินทรัพย์รวมทั้งหมด</p>
-        <h2 className="text-3xl font-black mt-1.5 tracking-tight">
-          ฿{totalBalance.toLocaleString(undefined, { minimumFractionDigits: 2 })}
-        </h2>
-      </div>
-
-      {/* Header */}
+    <div className="space-y-4">
       <div className="flex items-center justify-between">
-        <h1 className="text-xl font-bold text-zinc-900 dark:text-zinc-50 flex items-center gap-2">
-          กระเป๋าเงินของคุณ
-        </h1>
+        <h1 className="text-base font-semibold text-foreground">{t.wallets}</h1>
       </div>
 
-      {/* Add Wallet Form */}
-      <form onSubmit={handleAddWallet} className="flex gap-2 max-w-md">
-        <input
-          type="text"
-          placeholder="ชื่อกระเป๋าเงินใหม่..."
-          value={newWalletName}
-          onChange={(e) => setNewWalletName(e.target.value)}
-          className="flex-1 px-4 py-2.5 text-sm bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-700 rounded-xl focus:outline-none focus:ring-2 focus:ring-emerald-500/20 text-zinc-900 dark:text-zinc-50"
-          required
-        />
-        <button
-          type="submit"
-          className="px-4 py-2.5 bg-zinc-900 dark:bg-zinc-100 hover:bg-zinc-800 dark:hover:bg-zinc-200 text-white dark:text-zinc-900 font-semibold rounded-xl text-sm shadow-sm transition-colors flex items-center gap-1"
-        >
-          <Plus className="w-4 h-4" /> เพิ่ม
-        </button>
-      </form>
+      {/* Add wallet form */}
+      <Card className="card-soft p-3">
+        <form onSubmit={handleAdd} className="flex gap-2 items-end">
+          <div className="w-16">
+            <label className="text-[10px] uppercase tracking-wider text-muted-foreground">
+              {t.walletEmoji}
+            </label>
+            <Input
+              value={emoji}
+              onChange={(e) => setEmoji(e.target.value.slice(0, 4))}
+              className="h-10 text-center text-lg rounded-xl px-1"
+              maxLength={4}
+            />
+          </div>
+          <div className="flex-1">
+            <label className="text-[10px] uppercase tracking-wider text-muted-foreground">
+              {t.walletName}
+            </label>
+            <Input
+              value={name}
+              onChange={(e) => setName(e.target.value)}
+              className="h-10 rounded-xl text-sm"
+              maxLength={40}
+              required
+            />
+          </div>
+          <Button type="submit" className="h-10 rounded-xl px-3">
+            <Plus className="h-4 w-4" />
+          </Button>
+        </form>
+      </Card>
 
-      {/* Wallets Grid */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
-        {wallets.map((wallet) => {
-          const currentBalance = getWalletBalance(wallet.id);
-          return (
-            <div
-              key={wallet.id}
-              className="bg-white dark:bg-zinc-900 border border-zinc-100 dark:border-zinc-800 p-5 rounded-2xl shadow-sm hover:shadow-md transition-shadow flex flex-col justify-between group relative"
-            >
-              <div className="flex items-start justify-between">
-                <div className="p-2.5 bg-zinc-50 dark:bg-zinc-800 rounded-xl text-zinc-600 dark:text-zinc-300">
-                  <WalletIcon className="w-5 h-5" />
-                </div>
-                
-                {wallets.length > 1 && (
-                  <button
-                    onClick={() => {
-                      if (confirm('คุณแน่ใจว่าต้องการลบกระเป๋าเงินนี้? (ธุรกรรมภายในกระเป๋าจะยังคงอยู่ แต่ชื่อกระเป๋าจะหายไป)')) {
-                        deleteWallet(wallet.id);
-                      }
-                    }}
-                    className="p-1.5 rounded-lg text-zinc-300 hover:text-rose-500 hover:bg-rose-50 dark:hover:bg-rose-950/30 opacity-0 group-hover:opacity-100 transition-all"
-                  >
-                    <Trash2 className="w-4 h-4" />
-                  </button>
-                )}
+      {/* Wallet cards */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+        {walletsWithBalance.map((w) => (
+          <Card
+            key={w.id}
+            className="card-soft p-3 cursor-pointer hover:bg-muted/30 transition-colors group relative"
+            onClick={() => onOpenWallet?.(w.id)}
+          >
+            <div className="flex items-center gap-3">
+              <div className="h-11 w-11 rounded-2xl bg-muted flex items-center justify-center text-xl flex-shrink-0">
+                {w.emoji}
               </div>
-
-              <div className="mt-4">
-                <h3 className="text-sm font-semibold text-zinc-500 dark:text-zinc-400 truncate">
-                  {wallet.name}
-                </h3>
-                <p className="text-xl font-bold text-zinc-900 dark:text-zinc-50 mt-1">
-                  ฿{currentBalance.toLocaleString(undefined, { minimumFractionDigits: 2 })}
-                </p>
+              <div className="flex-1 min-w-0">
+                <div className="text-[11px] text-muted-foreground truncate">{w.name}</div>
+                <SmartAmount value={w.balance} className="text-base font-semibold" />
               </div>
+              {walletsWithBalance.length > 1 && (
+                <button
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    if (window.confirm(t.confirmDeleteWallet)) {
+                      deleteWallet(w.id);
+                      toast.success(lang === "th" ? "ลบแล้ว" : "Deleted");
+                    }
+                  }}
+                  className="opacity-0 group-hover:opacity-100 transition-opacity p-1.5 rounded-lg text-muted-foreground hover:text-destructive"
+                  aria-label={t.deleteWallet}
+                >
+                  <Trash2 className="h-4 w-4" />
+                </button>
+              )}
             </div>
-          );
-        })}
+          </Card>
+        ))}
       </div>
     </div>
   );

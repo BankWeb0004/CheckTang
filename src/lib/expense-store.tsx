@@ -311,6 +311,18 @@ export const translations = {
     amountRequired: "Please enter an amount greater than zero",
     viewTutorial: "View Tutorial Guide",
     emojiPlaceholder: "💰",
+    filterAll: "All",
+    monthlyIncome: "Monthly Income",
+    monthlyExpense: "Monthly Expense",
+    walletHistory: "Wallet Ledger",
+    edit: "Edit",
+    sentTo: "Sent to",
+    receivedFrom: "Received from",
+    appSettings: "App Settings",
+    financialManagement: "Financial Management",
+    aboutApp: "About App",
+    wallpaperGallery: "Wallpapers (max 5)",
+    addWallpaperSlot: "Add",
     tutorial: {
       skip: "Skip",
       next: "Next",
@@ -342,6 +354,7 @@ export const translations = {
       Other: "Other",
     } as Record<string, string>,
     methods: { Cash: "Cash", Bank: "Bank", Card: "Card" },
+
   },
   th: {
     appName: "เช็คตังค์",
@@ -405,23 +418,31 @@ export const translations = {
     amountRequired: "กรุณากรอกจำนวนเงินที่มากกว่าศูนย์",
     viewTutorial: "ดูคู่มือการใช้งานอีกครั้ง",
     emojiPlaceholder: "💰",
+    filterAll: "ทั้งหมด",
+    monthlyIncome: "รายรับเดือนนี้",
+    monthlyExpense: "รายจ่ายเดือนนี้",
+    walletHistory: "รายการในกระเป๋านี้",
+    edit: "แก้ไข",
+    sentTo: "โอนไป",
+    receivedFrom: "รับโอนจาก",
+    appSettings: "ตั้งค่าแอป",
+    financialManagement: "การจัดการข้อมูล",
+    aboutApp: "เกี่ยวกับแอป",
+    wallpaperGallery: "วอลเปเปอร์ (สูงสุด 5)",
+    addWallpaperSlot: "เพิ่ม",
     tutorial: {
       skip: "ข้าม",
       next: "ถัดไป",
       back: "ย้อนกลับ",
       getStarted: "เริ่มใช้งานเลย",
-      s1Title: "สวัสดีครับ! เช็คตังค์พร้อมช่วยคุมเงินแล้ว",
-      s1Body:
-        "แอปนี้ใช้ง่ายมาก เดี๋ยวเราเล่าให้ฟังแบบกระชับใน 3 สเต็ปนะ ไปดูกันเลย!",
-      s2Title: "บันทึกง่ายๆ ในไม่กี่วิ",
-      s2Body:
-        "คุณแค่เลือกแท็บ ใส่ตัวเลขเงิน แล้วเลือกหมวดหมู่ที่ใช่ จากนั้นกดบันทึกก็เรียบร้อยแล้ว",
-      s3Title: "ดูยอดสรุปเข้าใจง่ายสุดๆ",
-      s3Body:
-        "อยากรู้ว่าเงินหายไปไหน? แดชบอร์ดวงกลมจะแยกยอดรวม รายรับ-รายจ่ายให้คุณเห็นชัดๆ เลยล่ะ",
-      s4Title: "ลองบันทึกรายการแรกดู!",
-      s4Body:
-        "พร้อมแล้วกดปุ่มเครื่องหมาย '+' สีฟ้าอันใหญ่ด้านล่างนี้เพื่อเริ่มคุมเงินวันนี้กันเลย!",
+      s1Title: "",
+      s1Body: "",
+      s2Title: "",
+      s2Body: "",
+      s3Title: "",
+      s3Body: "",
+      s4Title: "",
+      s4Body: "",
     },
     categories: {
       Food: "อาหาร",
@@ -437,6 +458,7 @@ export const translations = {
       Other: "อื่นๆ",
     } as Record<string, string>,
     methods: { Cash: "เงินสด", Bank: "ธนาคาร", Card: "บัตร" },
+
   },
 } as const;
 
@@ -489,6 +511,10 @@ interface StoreCtx {
   t: (typeof translations)["en"] | (typeof translations)["th"];
   wallpaper: string | null;
   setWallpaper: (w: string | null) => void;
+  wallpapers: string[];
+  addWallpaper: (dataUrl: string) => void;
+  removeWallpaper: (idx: number) => void;
+  setActiveWallpaperIndex: (idx: number | null) => void;
   currency: CurrencyCode;
   setCurrency: (c: CurrencyCode) => void;
 
@@ -516,6 +542,7 @@ const LS = {
   darkMode: "et.darkMode",
   lang: "et.lang",
   wallpaper: "et.wallpaper",
+  wallpapers: "et.wallpapers.v2",
   currency: "et.currency",
   customCats: "et.customCategories",
   tutorial: "hasSeenTutorial",
@@ -549,6 +576,7 @@ export function ExpenseProvider({ children }: { children: ReactNode }) {
   const [darkMode, setDarkModeState] = useState<boolean>(false);
   const [lang, setLangState] = useState<Lang>("en");
   const [wallpaper, setWallpaperState] = useState<string | null>(null);
+  const [wallpapers, setWallpapersState] = useState<string[]>([]);
   const [currency, setCurrencyState] = useState<CurrencyCode>("THB");
   const [customCategories, setCustomCategories] = useState<CustomCategories>({
     income: [],
@@ -569,8 +597,18 @@ export function ExpenseProvider({ children }: { children: ReactNode }) {
       const th = localStorage.getItem(LS.theme);
       if (th && THEME_PRESETS.some((p) => p.id === th)) setThemeState(th);
       const dm = localStorage.getItem(LS.darkMode);
-      if (dm !== null) setDarkModeState(dm === "true");
       const wp = localStorage.getItem(LS.wallpaper);
+      if (wp) setWallpaperState(wp);
+      const wps = localStorage.getItem(LS.wallpapers);
+      if (wps) {
+        try {
+          const arr = JSON.parse(wps);
+          if (Array.isArray(arr)) setWallpapersState(arr.filter((s) => typeof s === "string").slice(0, 5));
+        } catch {}
+      } else if (wp) {
+        // seed gallery from previously single wallpaper
+        setWallpapersState([wp]);
+      }
       if (wp) setWallpaperState(wp);
       const cur = localStorage.getItem(LS.currency) as CurrencyCode | null;
       if (cur && CURRENCIES.some((c) => c.code === cur)) setCurrencyState(cur);
@@ -674,6 +712,10 @@ export function ExpenseProvider({ children }: { children: ReactNode }) {
     if (hydrated)
       localStorage.setItem(LS.customCats, JSON.stringify(customCategories));
   }, [customCategories, hydrated]);
+
+  useEffect(() => {
+    if (hydrated) localStorage.setItem(LS.wallpapers, JSON.stringify(wallpapers));
+  }, [wallpapers, hydrated]);
 
   /* -------- DERIVED -------- */
   const defaultWalletId = wallets[0]?.id ?? "";
@@ -851,6 +893,30 @@ export function ExpenseProvider({ children }: { children: ReactNode }) {
     if (w) localStorage.setItem(LS.wallpaper, w);
     else localStorage.removeItem(LS.wallpaper);
   };
+  const addWallpaper = (dataUrl: string) => {
+    setWallpapersState((prev) => {
+      if (prev.includes(dataUrl)) return prev;
+      const next = [...prev, dataUrl].slice(-5);
+      return next;
+    });
+    setWallpaper(dataUrl);
+  };
+  const removeWallpaper = (idx: number) => {
+    setWallpapersState((prev) => {
+      const next = prev.filter((_, i) => i !== idx);
+      // if active wallpaper was removed, clear it
+      if (prev[idx] && prev[idx] === wallpaper) setWallpaper(null);
+      return next;
+    });
+  };
+  const setActiveWallpaperIndex = (idx: number | null) => {
+    if (idx === null) {
+      setWallpaper(null);
+      return;
+    }
+    const target = wallpapers[idx];
+    if (target) setWallpaper(target);
+  };
   const setCurrency = (c: CurrencyCode) => {
     setCurrencyState(c);
     localStorage.setItem(LS.currency, c);
@@ -926,6 +992,10 @@ export function ExpenseProvider({ children }: { children: ReactNode }) {
         t: translations[lang],
         wallpaper,
         setWallpaper,
+        wallpapers,
+        addWallpaper,
+        removeWallpaper,
+        setActiveWallpaperIndex,
         currency,
         setCurrency,
 
