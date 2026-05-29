@@ -992,6 +992,10 @@ export function ExpenseProvider({ children }: { children: ReactNode }) {
         t: translations[lang],
         wallpaper,
         setWallpaper,
+        wallpapers,
+        addWallpaper,
+        removeWallpaper,
+        setActiveWallpaperIndex,
         currency,
         setCurrency,
 
