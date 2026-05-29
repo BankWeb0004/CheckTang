@@ -311,6 +311,18 @@ export const translations = {
     amountRequired: "Please enter an amount greater than zero",
     viewTutorial: "View Tutorial Guide",
     emojiPlaceholder: "💰",
+    filterAll: "All",
+    monthlyIncome: "Monthly Income",
+    monthlyExpense: "Monthly Expense",
+    walletHistory: "Wallet Ledger",
+    edit: "Edit",
+    sentTo: "Sent to",
+    receivedFrom: "Received from",
+    appSettings: "App Settings",
+    financialManagement: "Financial Management",
+    aboutApp: "About App",
+    wallpaperGallery: "Wallpapers (max 5)",
+    addWallpaperSlot: "Add",
     tutorial: {
       skip: "Skip",
       next: "Next",
@@ -342,6 +354,7 @@ export const translations = {
       Other: "Other",
     } as Record<string, string>,
     methods: { Cash: "Cash", Bank: "Bank", Card: "Card" },
+
   },
   th: {
     appName: "เช็คตังค์",
@@ -405,23 +418,31 @@ export const translations = {
     amountRequired: "กรุณากรอกจำนวนเงินที่มากกว่าศูนย์",
     viewTutorial: "ดูคู่มือการใช้งานอีกครั้ง",
     emojiPlaceholder: "💰",
+    filterAll: "ทั้งหมด",
+    monthlyIncome: "รายรับเดือนนี้",
+    monthlyExpense: "รายจ่ายเดือนนี้",
+    walletHistory: "รายการในกระเป๋านี้",
+    edit: "แก้ไข",
+    sentTo: "โอนไป",
+    receivedFrom: "รับโอนจาก",
+    appSettings: "ตั้งค่าแอป",
+    financialManagement: "การจัดการข้อมูล",
+    aboutApp: "เกี่ยวกับแอป",
+    wallpaperGallery: "วอลเปเปอร์ (สูงสุด 5)",
+    addWallpaperSlot: "เพิ่ม",
     tutorial: {
       skip: "ข้าม",
       next: "ถัดไป",
       back: "ย้อนกลับ",
       getStarted: "เริ่มใช้งานเลย",
-      s1Title: "สวัสดีครับ! เช็คตังค์พร้อมช่วยคุมเงินแล้ว",
-      s1Body:
-        "แอปนี้ใช้ง่ายมาก เดี๋ยวเราเล่าให้ฟังแบบกระชับใน 3 สเต็ปนะ ไปดูกันเลย!",
-      s2Title: "บันทึกง่ายๆ ในไม่กี่วิ",
-      s2Body:
-        "คุณแค่เลือกแท็บ ใส่ตัวเลขเงิน แล้วเลือกหมวดหมู่ที่ใช่ จากนั้นกดบันทึกก็เรียบร้อยแล้ว",
-      s3Title: "ดูยอดสรุปเข้าใจง่ายสุดๆ",
-      s3Body:
-        "อยากรู้ว่าเงินหายไปไหน? แดชบอร์ดวงกลมจะแยกยอดรวม รายรับ-รายจ่ายให้คุณเห็นชัดๆ เลยล่ะ",
-      s4Title: "ลองบันทึกรายการแรกดู!",
-      s4Body:
-        "พร้อมแล้วกดปุ่มเครื่องหมาย '+' สีฟ้าอันใหญ่ด้านล่างนี้เพื่อเริ่มคุมเงินวันนี้กันเลย!",
+      s1Title: "",
+      s1Body: "",
+      s2Title: "",
+      s2Body: "",
+      s3Title: "",
+      s3Body: "",
+      s4Title: "",
+      s4Body: "",
     },
     categories: {
       Food: "อาหาร",
@@ -437,6 +458,7 @@ export const translations = {
       Other: "อื่นๆ",
     } as Record<string, string>,
     methods: { Cash: "เงินสด", Bank: "ธนาคาร", Card: "บัตร" },
+
   },
 } as const;
 
