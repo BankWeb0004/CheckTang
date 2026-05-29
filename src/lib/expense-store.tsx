@@ -511,6 +511,10 @@ interface StoreCtx {
   t: (typeof translations)["en"] | (typeof translations)["th"];
   wallpaper: string | null;
   setWallpaper: (w: string | null) => void;
+  wallpapers: string[];
+  addWallpaper: (dataUrl: string) => void;
+  removeWallpaper: (idx: number) => void;
+  setActiveWallpaperIndex: (idx: number | null) => void;
   currency: CurrencyCode;
   setCurrency: (c: CurrencyCode) => void;
 
@@ -538,6 +542,7 @@ const LS = {
   darkMode: "et.darkMode",
   lang: "et.lang",
   wallpaper: "et.wallpaper",
+  wallpapers: "et.wallpapers.v2",
   currency: "et.currency",
   customCats: "et.customCategories",
   tutorial: "hasSeenTutorial",
