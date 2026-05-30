@@ -97,14 +97,19 @@ function HistoryRow({
 
   return (
     <div className="relative overflow-hidden" style={{ maxWidth: "100%" }}>
-      {/* Hidden actions - isolated layer (positioned off-screen to the right) */}
+      {/* Hidden actions - sit at the right edge, revealed when the row slides left */}
       <div
         className="absolute right-0 top-0 bottom-0 flex items-center gap-1 pr-1 z-0"
-        style={{ width: MAX_SWIPE, maxWidth: MAX_SWIPE, transform: "translateX(100%)" }}
+        style={{
+          width: MAX_SWIPE,
+          maxWidth: MAX_SWIPE,
+          pointerEvents: offset < 0 ? "auto" : "none",
+        }}
       >
         <button
           onClick={(e) => {
             e.stopPropagation();
+            setOffset(0);
             onEdit?.(tx);
           }}
           className="h-9 w-9 rounded-lg bg-muted text-foreground flex items-center justify-center flex-shrink-0"
@@ -118,6 +123,8 @@ function HistoryRow({
             if (window.confirm(t.confirmDelete)) {
               deleteTransaction(tx.id);
               toast.success(lang === "th" ? "ลบแล้ว" : "Deleted");
+            } else {
+              setOffset(0);
             }
           }}
           className="h-9 w-9 rounded-lg flex items-center justify-center flex-shrink-0"
@@ -127,6 +134,7 @@ function HistoryRow({
           <Trash2 className="h-4 w-4" />
         </button>
       </div>
+
 
       {/* Row - slides left to reveal actions underneath */}
       <div

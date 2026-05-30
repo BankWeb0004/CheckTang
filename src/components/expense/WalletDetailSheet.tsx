@@ -7,9 +7,9 @@ import {
   SheetContent,
   SheetHeader,
   SheetTitle,
-  SheetClose,
 } from "@/components/ui/sheet";
 import { ArrowDownLeft, ArrowUpRight } from "lucide-react";
+
 
 interface Props {
   walletId: string | null;
@@ -80,59 +80,66 @@ export function WalletDetailSheet({ walletId, open, onOpenChange, onEdit }: Prop
     <Sheet open={open} onOpenChange={onOpenChange}>
       <SheetContent
         side="bottom"
-        className="rounded-t-3xl max-h-[92vh] overflow-y-auto"
+        className="rounded-t-3xl h-[88vh] max-h-[88vh] p-0 flex flex-col"
       >
-        <SheetHeader className="relative">
-          <SheetClose className="absolute right-0 top-0 h-8 w-8 rounded-full flex items-center justify-center text-muted-foreground hover:text-foreground hover:bg-muted transition-colors" />
+        <SheetHeader className="px-6 pt-6 pb-2 shrink-0">
           <SheetTitle className="text-center text-base font-semibold pr-8">
             {wallet ? `${wallet.emoji} ${wallet.name}` : "—"}
           </SheetTitle>
         </SheetHeader>
 
         {wallet && (
-          <div className="space-y-4 pt-2 pb-6">
-            {/* Balance + month stats */}
-            <div className="text-center py-2">
-              <div className="text-[11px] uppercase tracking-widest text-muted-foreground">
-                {t.balance}
-              </div>
-              <SmartAmount value={wallet.balance} className="text-3xl font-semibold" />
-            </div>
-
-            <div className="grid grid-cols-2 gap-2">
-              <div className="rounded-2xl border border-border p-3 bg-card">
-                <div className="flex items-center gap-1.5 text-[11px] text-muted-foreground">
-                  <ArrowDownLeft className="h-3.5 w-3.5" style={{ color: "var(--income)" }} />
-                  {t.monthlyIncome}
+          <div className="flex-1 min-h-0 flex flex-col px-6 pb-6">
+            {/* Balance + month stats — fixed top region */}
+            <div className="shrink-0 space-y-3 pt-1">
+              <div className="text-center py-1">
+                <div className="text-[11px] uppercase tracking-widest text-muted-foreground">
+                  {t.balance}
                 </div>
-                <SmartAmount
-                  value={incomeMonth}
-                  colorize={false}
-                  className="text-base font-semibold mt-0.5"
-                />
+                <SmartAmount value={wallet.balance} className="text-3xl font-semibold" />
               </div>
-              <div className="rounded-2xl border border-border p-3 bg-card">
-                <div className="flex items-center gap-1.5 text-[11px] text-muted-foreground">
-                  <ArrowUpRight className="h-3.5 w-3.5" style={{ color: "var(--expense)" }} />
-                  {t.monthlyExpense}
-                </div>
-                <SmartAmount
-                  value={expenseMonth}
-                  colorize={false}
-                  className="text-base font-semibold mt-0.5"
-                  decimalClassName=""
-                />
-              </div>
-            </div>
 
-            <div>
-              <div className="text-sm font-medium text-foreground mb-2">{t.walletHistory}</div>
-              <div className="flex gap-1.5 overflow-x-auto pb-1 mb-2">
+              <div className="grid grid-cols-2 gap-2">
+                <div className="rounded-2xl border border-border p-3 bg-card">
+                  <div className="flex items-center gap-1.5 text-[11px] text-muted-foreground">
+                    <ArrowDownLeft className="h-3.5 w-3.5" style={{ color: "var(--income)" }} />
+                    {t.monthlyIncome}
+                  </div>
+                  <SmartAmount
+                    value={incomeMonth}
+                    colorize={false}
+                    className="text-base font-semibold mt-0.5"
+                  />
+                </div>
+                <div className="rounded-2xl border border-border p-3 bg-card">
+                  <div className="flex items-center gap-1.5 text-[11px] text-muted-foreground">
+                    <ArrowUpRight className="h-3.5 w-3.5" style={{ color: "var(--expense)" }} />
+                    {t.monthlyExpense}
+                  </div>
+                  <SmartAmount
+                    value={expenseMonth}
+                    colorize={false}
+                    className="text-base font-semibold mt-0.5"
+                  />
+                </div>
+              </div>
+
+              <div className="text-sm font-medium text-foreground pt-2">
+                {t.walletHistory}
+              </div>
+              <div className="flex gap-1.5 overflow-x-auto pb-1">
                 {chip("all", t.filterAll)}
                 {chip("income", t.income)}
                 {chip("expense", t.expense)}
                 {chip("transfer", t.transfer)}
               </div>
+            </div>
+
+            {/* Scrollable list — locked height container, prevents tab bounce */}
+            <div
+              className="flex-1 min-h-[280px] overflow-y-auto mt-2 -mx-1 px-1"
+              style={{ WebkitOverflowScrolling: "touch" }}
+            >
               <HistoryList
                 transactions={filtered}
                 onEdit={onEdit}
@@ -145,3 +152,4 @@ export function WalletDetailSheet({ walletId, open, onOpenChange, onEdit }: Prop
     </Sheet>
   );
 }
+
