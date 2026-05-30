@@ -43,13 +43,20 @@ export function CategoryModal({
   }, [open, editCategory]);
 
   const handleSubmit = () => {
-    const trimmedName = name.trim();
+    // Strip any leading/trailing emoji from the name so we don't display
+    // the emoji twice (the picker emoji is rendered separately).
+    const stripped = name
+      .replace(/^[\p{Emoji_Presentation}\p{Extended_Pictographic}\u200d\uFE0F\s]+/u, "")
+      .replace(/[\p{Emoji_Presentation}\p{Extended_Pictographic}\u200d\uFE0F\s]+$/u, "")
+      .trim();
+    const trimmedName = stripped || name.trim();
     if (!trimmedName) return;
     onSubmit(trimmedName, emoji);
     setName("");
     setEmoji("");
     onOpenChange(false);
   };
+
 
   const handleEmojiChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const value = e.target.value;

@@ -75,16 +75,10 @@ export function Dashboard() {
   });
 
   return (
-    <div className="space-y-3 pt-2">
-      {/* Header row - simplified */}
-      <div className="flex items-center justify-end gap-3">
-        <span className="text-[0.68rem] uppercase tracking-[0.25em] text-foreground opacity-60">
-          {t.dashboard}
-        </span>
-      </div>
-
+    <div className="space-y-3">
       {/* Net worth */}
-      <Card className="card-soft p-6">
+      <Card className="card-soft p-5">
+
         <div
           className="flex items-center gap-2 text-sm"
           style={{ color: "var(--muted-foreground)" }}

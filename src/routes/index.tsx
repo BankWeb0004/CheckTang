@@ -123,22 +123,23 @@ function AppShell() {
       )}
 
       {/* Container: single column < lg, 2-col grid >= lg */}
-      <div className="relative max-w-7xl mx-auto px-4 sm:px-5 pt-4 pb-32 lg:pb-10">
+      <div className="relative max-w-7xl mx-auto px-4 sm:px-5 pt-3 pb-32 lg:pb-10">
         {/* Branding header — own topmost row */}
-        <header className="flex items-center justify-between mb-4">
-          <div className="flex items-center gap-2.5 text-foreground">
-            <CheckTangLogo showLabel={false} className="text-primary scale-75 -ml-2" />
+        <header className="flex items-center justify-between mb-2.5">
+          <div className="flex items-center gap-2 text-foreground">
+            <CheckTangLogo showLabel={false} className="text-primary scale-[0.65] -ml-3" />
             <span
-              className="text-lg font-bold tracking-tight"
+              className="text-base font-bold tracking-tight"
               style={{ fontFamily: "'Plus Jakarta Sans', 'Inter', system-ui" }}
             >
               Check Tang
             </span>
           </div>
-          <span className="text-[11px] text-muted-foreground tracking-wide">
+          <span className="text-[10.5px] text-muted-foreground tracking-wide">
             {dateLabel}
           </span>
         </header>
+
 
         <div className="grid grid-cols-1 lg:grid-cols-[minmax(0,_1fr)_360px] gap-5">
           {/* LEFT panel */}
