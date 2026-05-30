@@ -1,4 +1,4 @@
-import { useRef } from "react";
+import { useRef, useState } from "react";
 import {
   useStore,
   THEME_PRESETS,
@@ -8,6 +8,7 @@ import {
 } from "@/lib/expense-store";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 import {
   Select,
   SelectContent,
@@ -15,7 +16,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Check, Upload, X, Sun, Moon, BookOpen, Trash2, Plus } from "lucide-react";
+import { Check, Upload, X, Sun, Moon, BookOpen, Trash2, Plus, Download } from "lucide-react";
 import { toast } from "sonner";
 import { appConfig } from "@/lib/app-config";
 
@@ -64,8 +65,111 @@ export function Settings() {
     currency,
     setCurrency,
     openTutorial,
+    wallets,
+    transactions,
+    addTransactions,
+    setWallets,
+    setTransactions,
   } = useStore();
   const fileRef = useRef<HTMLInputElement>(null);
+  const importRef = useRef<HTMLInputElement>(null);
+  const [tapCount, setTapCount] = useState(0);
+  const [lastTapTime, setLastTapTime] = useState(0);
+  const [showPinModal, setShowPinModal] = useState(false);
+  const [pinInput, setPinInput] = useState("");
+  const [showFeedbackModal, setShowFeedbackModal] = useState(false);
+  const [feedbackText, setFeedbackText] = useState("");
+  const [isSending, setIsSending] = useState(false);
+  const [lastFeedbackTime, setLastFeedbackTime] = useState(0);
+
+  // Easter egg: Tap footer 7 times within 3 seconds to show PIN modal
+  const handleFooterTap = () => {
+    const now = Date.now();
+    const timeSinceLastTap = now - lastTapTime;
+
+    if (timeSinceLastTap > 3000) {
+      // Reset if more than 3 seconds have passed
+      setTapCount(1);
+    } else {
+      setTapCount((prev: number) => prev + 1);
+    }
+
+    setLastTapTime(now);
+
+    if (tapCount + 1 === 7) {
+      setShowPinModal(true);
+      setTapCount(0);
+    }
+  };
+
+  const handlePinSubmit = () => {
+    const masterPin = import.meta.env.VITE_DEV_MASTER_PIN?.toString().trim() || "";
+    if (pinInput === masterPin) {
+      setShowPinModal(false);
+      setPinInput("");
+      // Navigate to admin page (will implement next)
+      window.location.href = "/admin";
+    } else {
+      toast.error(lang === "th" ? "PIN ไม่ถูกต้อง" : "Invalid PIN");
+      setPinInput("");
+    }
+  };
+
+  const handleFeedbackSubmit = async () => {
+    const now = Date.now();
+    const cooldownMs = 2 * 60 * 1000; // 2 minutes
+
+    if (now - lastFeedbackTime < cooldownMs) {
+      const remainingTime = Math.ceil((cooldownMs - (now - lastFeedbackTime)) / 1000);
+      toast.error(
+        lang === "th"
+          ? `กรุณารอ ${remainingTime} วินาทีก่อนส่งซ้ำ`
+          : `Please wait ${remainingTime} seconds before sending again`
+      );
+      return;
+    }
+
+    if (!feedbackText.trim()) {
+      toast.error(lang === "th" ? "กรุณากรอกข้อความ" : "Please enter your message");
+      return;
+    }
+
+    setIsSending(true);
+
+    try {
+      const feedbackApiBase = import.meta.env.VITE_FEEDBACK_API_BASE;
+      if (!feedbackApiBase) {
+        throw new Error("Feedback API base URL not configured");
+      }
+
+      const response = await fetch(feedbackApiBase, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          message: feedbackText,
+          timestamp: new Date().toISOString(),
+          appVersion: appConfig.currentVersion,
+          language: lang,
+        }),
+      });
+
+      if (!response.ok) {
+        throw new Error("Failed to submit feedback");
+      }
+
+      toast.success(lang === "th" ? "ส่งความคิดเห็นสำเร็จ" : "Feedback submitted successfully");
+      setFeedbackText("");
+      setShowFeedbackModal(false);
+      setLastFeedbackTime(Date.now());
+    } catch (error) {
+      console.error("Feedback submission error:", error);
+      toast.error(lang === "th" ? "ส่งความคิดเห็นล้มเหลว" : "Failed to submit feedback");
+    } finally {
+      setIsSending(false);
+    }
+  };
 
   const onUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -87,6 +191,98 @@ export function Settings() {
       toast.error("Failed to load image");
     }
     e.target.value = "";
+  };
+
+  // Export data handler
+  const handleExportData = async () => {
+    try {
+      const exportData = {
+        version: appConfig.currentVersion,
+        exportedAt: new Date().toISOString(),
+        wallets,
+        transactions,
+      };
+
+      const blob = new Blob([JSON.stringify(exportData, null, 2)], {
+        type: "application/json",
+      });
+      const url = URL.createObjectURL(blob);
+      const timestamp = new Date().toISOString().replace(/[:.]/g, "-").slice(0, -5);
+      const filename = `checktang_backup_${timestamp}.json`;
+
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = filename;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+
+      toast.success(lang === "th" ? "สำรองข้อมูลสำเร็จ" : "Data exported successfully");
+    } catch (error) {
+      console.error("Export error:", error);
+      toast.error(lang === "th" ? "สำรองข้อมูลล้มเหลว" : "Export failed");
+    }
+  };
+
+  // Import data handler
+  const handleImportData = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    try {
+      const text = await file.text();
+      const data = JSON.parse(text);
+
+      // Validate schema
+      if (!data.wallets || !Array.isArray(data.wallets)) {
+        throw new Error("Invalid wallets data");
+      }
+      if (!data.transactions || !Array.isArray(data.transactions)) {
+        throw new Error("Invalid transactions data");
+      }
+
+      // Validate wallet structure
+      for (const wallet of data.wallets) {
+        if (!wallet.id || !wallet.name || !wallet.emoji) {
+          throw new Error("Invalid wallet structure");
+        }
+      }
+
+      // Validate transaction structure
+      for (const tx of data.transactions) {
+        if (!tx.id || !tx.wallet_id || !tx.type || typeof tx.amount !== "number") {
+          throw new Error("Invalid transaction structure");
+        }
+      }
+
+      // Confirm import
+      const confirmed = window.confirm(
+        lang === "th"
+          ? "นำเข้าข้อมูลจะแทนที่ข้อมูลทั้งหมดของคุณ ต้องการดำเนินการต่อหรือไม่?"
+          : "Importing data will replace all your existing data. Continue?"
+      );
+
+      if (!confirmed) {
+        e.target.value = "";
+        return;
+      }
+
+      // Import data
+      setWallets(data.wallets);
+      setTransactions(data.transactions);
+
+      toast.success(lang === "th" ? "นำเข้าข้อมูลสำเร็จ" : "Data imported successfully");
+    } catch (error) {
+      console.error("Import error:", error);
+      toast.error(
+        lang === "th"
+          ? "นำเข้าข้อมูลล้มเหลว: รูปแบบไฟล์ไม่ถูกต้อง"
+          : "Import failed: Invalid file format"
+      );
+    } finally {
+      e.target.value = "";
+    }
   };
 
   return (
@@ -305,6 +501,38 @@ export function Settings() {
             </SelectContent>
           </Select>
         </Card>
+
+        {/* Backup & Restore */}
+        <Card className="card-soft p-3">
+          <div className="text-xs font-medium mb-3 text-foreground">
+            {lang === "th" ? "สำรองและนำเข้าข้อมูล" : "Backup & Restore"}
+          </div>
+          <div className="grid grid-cols-2 gap-2">
+            <Button
+              variant="outline"
+              className="h-10 rounded-xl text-sm"
+              onClick={handleExportData}
+            >
+              <Download className="h-4 w-4 mr-2" />
+              {lang === "th" ? "สำรองข้อมูล" : "Export"}
+            </Button>
+            <Button
+              variant="outline"
+              className="h-10 rounded-xl text-sm"
+              onClick={() => importRef.current?.click()}
+            >
+              <Upload className="h-4 w-4 mr-2" />
+              {lang === "th" ? "นำเข้าข้อมูล" : "Import"}
+            </Button>
+          </div>
+          <input
+            ref={importRef}
+            type="file"
+            accept=".json"
+            className="hidden"
+            onChange={handleImportData}
+          />
+        </Card>
       </section>
 
       {/* ================= ABOUT APP ================= */}
@@ -317,10 +545,112 @@ export function Settings() {
             เช็คตังค์ (CHECK TANG)
             <span className="text-muted-foreground font-medium"> — V{appConfig.currentVersion} (Universal)</span>
           </div>
-          <div className="text-[11px] text-muted-foreground mt-1">
+          <div
+            className="text-[11px] text-muted-foreground mt-1 cursor-pointer select-none"
+            onClick={handleFooterTap}
+          >
             Developer: Watcharaphong Chiamthaisong (Bank)
           </div>
         </Card>
+
+        {/* Feedback Button */}
+        <Card className="card-soft p-2">
+          <button
+            onClick={() => setShowFeedbackModal(true)}
+            className="w-full flex items-center gap-3 p-2 rounded-xl hover:bg-muted/60 transition-colors text-left"
+          >
+            <div className="h-9 w-9 rounded-xl bg-primary/10 flex items-center justify-center text-primary">
+              <BookOpen className="h-4 w-4" />
+            </div>
+            <span className="text-sm font-medium text-foreground flex-1">
+              💬 {lang === "th" ? "ส่งความคิดเห็น / รายงานปัญหา" : "Send Feedback / Report Issue"}
+            </span>
+          </button>
+        </Card>
+
+        {/* PIN Modal */}
+        {showPinModal && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm">
+            <div className="bg-card rounded-2xl p-6 w-full max-w-sm mx-4 border border-border shadow-lg">
+              <h3 className="text-lg font-semibold text-foreground mb-4">
+                {lang === "th" ? "กรอกรหัส PIN" : "Enter PIN"}
+              </h3>
+              <Input
+                type="password"
+                value={pinInput}
+                onChange={(e: React.ChangeEvent<HTMLInputElement>) => setPinInput(e.target.value)}
+                placeholder="••••••"
+                className="h-12 text-center text-2xl tracking-widest rounded-xl mb-4"
+                autoFocus
+                onKeyDown={(e: React.KeyboardEvent<HTMLInputElement>) => {
+                  if (e.key === "Enter") handlePinSubmit();
+                  if (e.key === "Escape") {
+                    setShowPinModal(false);
+                    setPinInput("");
+                  }
+                }}
+              />
+              <div className="flex gap-2">
+                <Button
+                  variant="outline"
+                  className="flex-1 h-10 rounded-xl"
+                  onClick={() => {
+                    setShowPinModal(false);
+                    setPinInput("");
+                  }}
+                >
+                  {t.cancel}
+                </Button>
+                <Button
+                  className="flex-1 h-10 rounded-xl"
+                  onClick={handlePinSubmit}
+                >
+                  {t.save}
+                </Button>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Feedback Modal */}
+        {showFeedbackModal && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm">
+            <div className="bg-card rounded-2xl p-6 w-full max-w-md mx-4 border border-border shadow-lg">
+              <h3 className="text-lg font-semibold text-foreground mb-4">
+                💬 {lang === "th" ? "ส่งความคิดเห็น / รายงานปัญหา" : "Send Feedback / Report Issue"}
+              </h3>
+              <textarea
+                value={feedbackText}
+                onChange={(e: React.ChangeEvent<HTMLTextAreaElement>) => setFeedbackText(e.target.value)}
+                placeholder={lang === "th" ? "กรอกข้อความของคุณที่นี่..." : "Enter your message here..."}
+                className="w-full h-32 p-3 rounded-xl border border-border bg-background text-foreground text-sm resize-none focus:outline-none focus:ring-2 focus:ring-primary"
+                autoFocus
+              />
+              <div className="flex gap-2 mt-4">
+                <Button
+                  variant="outline"
+                  className="flex-1 h-10 rounded-xl"
+                  onClick={() => {
+                    setShowFeedbackModal(false);
+                    setFeedbackText("");
+                  }}
+                  disabled={isSending}
+                >
+                  {t.cancel}
+                </Button>
+                <Button
+                  className="flex-1 h-10 rounded-xl"
+                  onClick={handleFeedbackSubmit}
+                  disabled={isSending || !feedbackText.trim()}
+                >
+                  {isSending
+                    ? (lang === "th" ? "กำลังส่ง..." : "Sending...")
+                    : (lang === "th" ? "ส่ง" : "Send")}
+                </Button>
+              </div>
+            </div>
+          </div>
+        )}
       </section>
     </div>
   );

@@ -7,6 +7,7 @@ import {
   SheetContent,
   SheetHeader,
   SheetTitle,
+  SheetClose,
 } from "@/components/ui/sheet";
 import { ArrowDownLeft, ArrowUpRight } from "lucide-react";
 
@@ -81,8 +82,9 @@ export function WalletDetailSheet({ walletId, open, onOpenChange, onEdit }: Prop
         side="bottom"
         className="rounded-t-3xl max-h-[92vh] overflow-y-auto"
       >
-        <SheetHeader>
-          <SheetTitle className="text-center text-base font-semibold">
+        <SheetHeader className="relative">
+          <SheetClose className="absolute right-0 top-0 h-8 w-8 rounded-full flex items-center justify-center text-muted-foreground hover:text-foreground hover:bg-muted transition-colors" />
+          <SheetTitle className="text-center text-base font-semibold pr-8">
             {wallet ? `${wallet.emoji} ${wallet.name}` : "—"}
           </SheetTitle>
         </SheetHeader>

@@ -75,12 +75,9 @@ export function Dashboard() {
   });
 
   return (
-    <div className="space-y-4">
-      {/* Header row */}
-      <div className="flex items-center justify-between gap-3">
-        <p className="text-[0.72rem] font-medium tracking-[0.08em] text-foreground">
-          {dateLabel}
-        </p>
+    <div className="space-y-3 pt-2">
+      {/* Header row - simplified */}
+      <div className="flex items-center justify-end gap-3">
         <span className="text-[0.68rem] uppercase tracking-[0.25em] text-foreground opacity-60">
           {t.dashboard}
         </span>

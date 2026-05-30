@@ -462,9 +462,14 @@ export const translations = {
   },
 } as const;
 
+export interface CustomCategory {
+  name: string;
+  emoji: string;
+}
+
 export interface CustomCategories {
-  income: string[];
-  expense: string[];
+  income: CustomCategory[];
+  expense: CustomCategory[];
 }
 
 /* =======================================================================
@@ -500,6 +505,8 @@ interface StoreCtx {
   addTransactions: (items: NewTransactionInput[]) => void;
   updateTransaction: (id: string, patch: Partial<NewTransactionInput>) => void;
   deleteTransaction: (id: string) => void;
+  setWallets: (wallets: Wallet[]) => void;
+  setTransactions: (transactions: Transaction[]) => void;
 
   // preferences
   theme: string;
@@ -520,8 +527,11 @@ interface StoreCtx {
 
   // categories
   customCategories: CustomCategories;
-  addCustomCategory: (type: TxType, name: string) => boolean;
+  addCustomCategory: (type: TxType, name: string, emoji: string) => boolean;
+  editCustomCategory: (type: TxType, oldName: string, newName: string, newEmoji: string) => boolean;
+  deleteCustomCategory: (type: TxType, name: string) => boolean;
   getCategoriesFor: (type: TxType) => string[];
+  getCustomCategoryEmoji: (type: TxType, name: string) => string | undefined;
 
   // tutorial
   hasSeenTutorial: boolean;
@@ -614,13 +624,30 @@ export function ExpenseProvider({ children }: { children: ReactNode }) {
       if (cur && CURRENCIES.some((c) => c.code === cur)) setCurrencyState(cur);
       const cc = localStorage.getItem(LS.customCats);
       if (cc) {
-        const parsed = JSON.parse(cc);
-        if (parsed && Array.isArray(parsed.income) && Array.isArray(parsed.expense)) {
-          setCustomCategories({
-            income: parsed.income.filter((s: unknown) => typeof s === "string"),
-            expense: parsed.expense.filter((s: unknown) => typeof s === "string"),
-          });
-        }
+        try {
+          const parsed = JSON.parse(cc);
+          if (parsed && Array.isArray(parsed.income) && Array.isArray(parsed.expense)) {
+            // Handle both old string[] format and new CustomCategory[] format
+            const normalizeCats = (arr: unknown[]): CustomCategory[] => {
+              return arr
+                .map((item) => {
+                  if (typeof item === "string") {
+                    // Old format: just a string name
+                    return { name: item, emoji: "" };
+                  }
+                  if (item && typeof item === "object" && "name" in item) {
+                    return { name: String(item.name), emoji: String((item as { emoji?: string }).emoji || "") };
+                  }
+                  return null;
+                })
+                .filter((c): c is CustomCategory => c !== null);
+            };
+            setCustomCategories({
+              income: normalizeCats(parsed.income),
+              expense: normalizeCats(parsed.expense),
+            });
+          }
+        } catch {}
       }
       const seen = localStorage.getItem(LS.tutorial);
       const seenBool = seen === "true";
@@ -875,6 +902,14 @@ export function ExpenseProvider({ children }: { children: ReactNode }) {
   const deleteTransaction = (id: string) =>
     setTransactions((prev) => prev.filter((t) => t.id !== id));
 
+  const setWalletsImpl = (newWallets: Wallet[]) => {
+    setWallets(newWallets);
+  };
+
+  const setTransactionsImpl = (newTransactions: Transaction[]) => {
+    setTransactions(newTransactions);
+  };
+
   /* -------- PREFS -------- */
   const setTheme = (id: string) => {
     setThemeState(id);
@@ -931,8 +966,9 @@ export function ExpenseProvider({ children }: { children: ReactNode }) {
           : [...INCOME_CATEGORY_KEYS];
       const customs =
         type === "expense" ? customCategories.expense : customCategories.income;
+      const customNames = customs.map((c) => c.name);
       const seen = new Set<string>();
-      return [...defaults, ...customs].filter((c) => {
+      return [...defaults, ...customNames].filter((c) => {
         if (seen.has(c)) return false;
         seen.add(c);
         return true;
@@ -941,15 +977,56 @@ export function ExpenseProvider({ children }: { children: ReactNode }) {
     [customCategories]
   );
 
-  const addCustomCategory: StoreCtx["addCustomCategory"] = (type, rawName) => {
+  const getCustomCategoryEmoji = useCallback(
+    (type: TxType, name: string): string | undefined => {
+      if (type === "transfer") return undefined;
+      const list = type === "expense" ? customCategories.expense : customCategories.income;
+      const found = list.find((c) => c.name === name);
+      return found?.emoji;
+    },
+    [customCategories]
+  );
+
+  const addCustomCategory: StoreCtx["addCustomCategory"] = (type, rawName, rawEmoji) => {
     if (type === "transfer") return false;
     const name = rawName.trim();
     if (!name || name.length > 40) return false;
     const list = getCategoriesFor(type);
     if (list.includes(name)) return false;
+    const emoji = (rawEmoji || "").slice(0, 8);
     setCustomCategories((prev) => ({
       ...prev,
-      [type]: [...prev[type], name],
+      [type]: [...prev[type], { name, emoji }],
+    }));
+    return true;
+  };
+
+  const editCustomCategory: StoreCtx["editCustomCategory"] = (type, oldName, newName, newEmoji) => {
+    if (type === "transfer") return false;
+    const trimmedName = newName.trim();
+    if (!trimmedName || trimmedName.length > 40) return false;
+    
+    const list = type === "expense" ? customCategories.expense : customCategories.income;
+    const exists = list.find((c) => c.name === trimmedName);
+    if (exists && exists.name !== oldName) return false;
+    
+    setCustomCategories((prev) => ({
+      ...prev,
+      [type]: prev[type].map((c) =>
+        c.name === oldName ? { name: trimmedName, emoji: (newEmoji || "").slice(0, 8) } : c
+      ),
+    }));
+    return true;
+  };
+
+  const deleteCustomCategory: StoreCtx["deleteCustomCategory"] = (type, name) => {
+    if (type === "transfer") return false;
+    const list = type === "expense" ? customCategories.expense : customCategories.income;
+    if (list.length === 0) return false;
+    
+    setCustomCategories((prev) => ({
+      ...prev,
+      [type]: prev[type].filter((c) => c.name !== name),
     }));
     return true;
   };
@@ -982,6 +1059,8 @@ export function ExpenseProvider({ children }: { children: ReactNode }) {
         addTransactions,
         updateTransaction,
         deleteTransaction,
+        setWallets: setWalletsImpl,
+        setTransactions: setTransactionsImpl,
 
         theme,
         setTheme,
@@ -1001,7 +1080,10 @@ export function ExpenseProvider({ children }: { children: ReactNode }) {
 
         customCategories,
         addCustomCategory,
+        editCustomCategory,
+        deleteCustomCategory,
         getCategoriesFor,
+        getCustomCategoryEmoji,
 
         hasSeenTutorial,
         setHasSeenTutorial,

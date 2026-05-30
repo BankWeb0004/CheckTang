@@ -5,6 +5,7 @@ import {
   TxType,
   getCategoryLabel,
   DEFAULT_CATEGORY_EMOJI,
+  CustomCategory,
 } from "@/lib/expense-store";
 import {
   Sheet,
@@ -23,7 +24,8 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { toast } from "sonner";
-import { ArrowDownLeft, ArrowRightLeft, ArrowUpRight, Plus } from "lucide-react";
+import { ArrowDownLeft, ArrowRightLeft, ArrowUpRight, Plus, Pencil, Trash2 } from "lucide-react";
+import { CategoryModal } from "@/components/expense/CategoryModal";
 
 interface Props {
   open: boolean;
@@ -48,16 +50,24 @@ export function AddTransactionSheet({
     updateTransaction,
     getCategoriesFor,
     addCustomCategory,
+    editCustomCategory,
+    deleteCustomCategory,
+    customCategories,
+    getCustomCategoryEmoji,
     defaultWalletId,
   } = useStore();
 
   const [type, setType] = useState<TxType>("expense");
   const [amount, setAmount] = useState("");
+  const [amountDisplay, setAmountDisplay] = useState("");
   const [walletId, setWalletId] = useState<string>("");
   const [toWalletId, setToWalletId] = useState<string>("");
   const [category, setCategory] = useState<string>("");
   const [note, setNote] = useState("");
   const [date, setDate] = useState<string>(new Date().toISOString().slice(0, 10));
+  const [addMore, setAddMore] = useState(false);
+  const [categoryModalOpen, setCategoryModalOpen] = useState(false);
+  const [editingCategory, setEditingCategory] = useState<CustomCategory | null>(null);
 
   const isEdit = !!editTransaction;
 
@@ -66,7 +76,9 @@ export function AddTransactionSheet({
     if (!open) return;
     if (editTransaction) {
       setType(editTransaction.type);
-      setAmount(String(editTransaction.amount));
+      const amtStr = String(editTransaction.amount);
+      setAmount(amtStr);
+      setAmountDisplay(formatNumberWithCommas(amtStr));
       setWalletId(editTransaction.wallet_id);
       setToWalletId(editTransaction.to_wallet_id ?? "");
       setCategory(editTransaction.category_name);
@@ -75,13 +87,47 @@ export function AddTransactionSheet({
     } else {
       setType(initialType ?? "expense");
       setAmount("");
+      setAmountDisplay("");
       setWalletId(initialWalletId || defaultWalletId || wallets[0]?.id || "");
       setToWalletId("");
       setCategory("");
       setNote("");
       setDate(new Date().toISOString().slice(0, 10));
+      setAddMore(false);
     }
   }, [open, editTransaction, initialWalletId, initialType, defaultWalletId, wallets]);
+
+  // Format number with thousands separator
+  const formatNumberWithCommas = (value: string): string => {
+    if (!value) return "";
+    // Remove existing commas and non-numeric chars except decimal point
+    const cleanValue = value.replace(/[^0-9.]/g, "");
+    if (!cleanValue) return "";
+    
+    const parts = cleanValue.split(".");
+    const integerPart = parts[0];
+    const decimalPart = parts[1] || "";
+    
+    // Add commas to integer part
+    const formattedInteger = integerPart.replace(/\B(?=(\d{3})+(?!\d))/g, ",");
+    
+    // Combine with decimal part if exists
+    if (decimalPart) {
+      return `${formattedInteger}.${decimalPart.slice(0, 2)}`;
+    }
+    return formattedInteger;
+  };
+
+  // Handle amount input change with live formatting
+  const handleAmountChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const value = e.target.value;
+    // Allow only digits and decimal point
+    if (value === "" || /^\d*\.?\d{0,2}$/.test(value.replace(/,/g, ""))) {
+      const cleanValue = value.replace(/,/g, "");
+      setAmount(cleanValue);
+      setAmountDisplay(formatNumberWithCommas(cleanValue));
+    }
+  };
 
   const categories = useMemo(() => getCategoriesFor(type), [type, getCategoriesFor]);
 
@@ -111,6 +157,11 @@ export function AddTransactionSheet({
       }
     }
 
+    // Resolve emoji for custom categories
+    const resolvedEmoji = type === "transfer"
+      ? "🔁"
+      : (getCustomCategoryEmoji(type, category) ?? DEFAULT_CATEGORY_EMOJI[category] ?? (category.match(/\p{Emoji}/u)?.[0] ?? ""));
+
     const payload = {
       wallet_id: walletId,
       to_wallet_id: type === "transfer" ? toWalletId : null,
@@ -122,11 +173,7 @@ export function AddTransactionSheet({
             ? "โอนเงิน"
             : "Transfer"
           : category,
-      category_emoji:
-        type === "transfer"
-          ? "🔁"
-          : DEFAULT_CATEGORY_EMOJI[category] ??
-            (category.match(/\p{Emoji}/u)?.[0] ?? ""),
+      category_emoji: resolvedEmoji,
       note,
       date,
     };
@@ -134,26 +181,76 @@ export function AddTransactionSheet({
     if (isEdit && editTransaction) {
       updateTransaction(editTransaction.id, payload);
       toast.success(lang === "th" ? "บันทึกการแก้ไขแล้ว" : "Updated");
+      onOpenChange(false);
     } else {
       addTransaction(payload);
       toast.success(lang === "th" ? "บันทึกแล้ว" : "Saved");
+      
+      if (addMore) {
+        // Clear fields for next entry but keep sheet open
+        setAmount("");
+        setAmountDisplay("");
+        setCategory("");
+        setNote("");
+        setDate(new Date().toISOString().slice(0, 10));
+      } else {
+        onOpenChange(false);
+      }
     }
-
-    onOpenChange(false);
   };
 
-  const handleAddCategory = () => {
+  // Get custom categories for the current type
+  const currentCustomCategories = useMemo(() => {
+    if (type === "transfer") return [];
+    return type === "expense" ? customCategories.expense : customCategories.income;
+  }, [type, customCategories]);
+
+  const isCustomCategory = (cat: string): boolean => {
+    return currentCustomCategories.some((c) => c.name === cat);
+  };
+
+  const getCustomCategoryData = (cat: string): CustomCategory | undefined => {
+    return currentCustomCategories.find((c) => c.name === cat);
+  };
+
+  const handleOpenCategoryModal = (editCat?: CustomCategory) => {
     if (type === "transfer") return;
-    const name = window.prompt(t.newCategoryPrompt);
-    if (!name) return;
-    const trimmed = name.trim();
-    if (!trimmed) return;
-    const ok = addCustomCategory(type, trimmed);
-    if (ok) {
-      setCategory(trimmed);
-      toast.success(lang === "th" ? "เพิ่มหมวดหมู่แล้ว" : "Category added");
+    setEditingCategory(editCat || null);
+    setCategoryModalOpen(true);
+  };
+
+  const handleCategoryModalSubmit = (name: string, emoji: string) => {
+    if (editingCategory) {
+      // Edit existing category
+      const ok = editCustomCategory(type, editingCategory.name, name, emoji);
+      if (ok) {
+        if (category === editingCategory.name) {
+          setCategory(name);
+        }
+        toast.success(lang === "th" ? "แก้ไขหมวดหมู่แล้ว" : "Category updated");
+      } else {
+        toast.error(lang === "th" ? "ไม่สำเร็จ" : "Could not update");
+      }
     } else {
-      toast.error(lang === "th" ? "ไม่สำเร็จ" : "Could not add");
+      // Add new category
+      const ok = addCustomCategory(type, name, emoji);
+      if (ok) {
+        setCategory(name);
+        toast.success(lang === "th" ? "เพิ่มหมวดหมู่แล้ว" : "Category added");
+      } else {
+        toast.error(lang === "th" ? "ไม่สำเร็จ" : "Could not add");
+      }
+    }
+  };
+
+  const handleDeleteCustomCategory = (cat: string) => {
+    if (!confirm(lang === "th" ? "ลบหมวดหมู่นี้?" : "Delete this category?")) return;
+    const ok = deleteCustomCategory(type, cat);
+    if (ok) {
+      if (category === cat) setCategory("");
+      toast.success(lang === "th" ? "ลบแล้ว" : "Deleted");
+    } else {
+      toast.error(lang === "th" ? "ไม่สำเร็จ" : "Could not delete");
     }
   };
 
@@ -214,11 +311,8 @@ export function AddTransactionSheet({
             <Input
               type="text"
               inputMode="decimal"
-              value={amount}
-              onChange={(e) => {
-                const v = e.target.value;
-                if (v === "" || /^\d*\.?\d{0,2}$/.test(v)) setAmount(v);
-              }}
+              value={amountDisplay}
+              onChange={handleAmountChange}
               placeholder="0.00"
               className="h-14 text-2xl font-semibold rounded-2xl text-center"
               autoFocus
@@ -274,30 +368,58 @@ export function AddTransactionSheet({
                 {categories.map((cat) => {
                   const active = cat === category;
                   const label = getCategoryLabel(cat, t.categories);
-                  const emoji =
-                    DEFAULT_CATEGORY_EMOJI[cat] ??
-                    cat.match(/\p{Emoji}/u)?.[0] ??
-                    "🏷️";
+                  const isCustom = isCustomCategory(cat);
+                  const customData = isCustom ? getCustomCategoryData(cat) : null;
+                  const emoji = (customData?.emoji || DEFAULT_CATEGORY_EMOJI[cat]) ?? cat.match(/\p{Emoji}/u)?.[0] ?? "🏷️";
+                  
                   return (
-                    <button
-                      key={cat}
-                      type="button"
-                      onClick={() => setCategory(cat)}
-                      className="px-3 py-1.5 rounded-xl text-xs font-medium transition-colors border"
-                      style={{
-                        background: active ? "var(--primary)" : "var(--card)",
-                        color: active ? "var(--primary-foreground)" : "var(--foreground)",
-                        borderColor: active ? "var(--primary)" : "var(--border)",
-                      }}
-                    >
-                      <span className="mr-1">{emoji}</span>
-                      {label}
-                    </button>
+                    <div key={cat} className="relative group">
+                      <button
+                        type="button"
+                        onClick={() => setCategory(cat)}
+                        className="px-3 py-1.5 rounded-xl text-xs font-medium transition-colors border flex items-center gap-1"
+                        style={{
+                          background: active ? "var(--primary)" : "var(--card)",
+                          color: active ? "var(--primary-foreground)" : "var(--foreground)",
+                          borderColor: active ? "var(--primary)" : "var(--border)",
+                        }}
+                      >
+                        <span>{emoji}</span>
+                        <span>{label}</span>
+                      </button>
+                      {/* Edit/Delete buttons for custom categories (shown on hover) */}
+                      {isCustom && !active && (
+                        <div className="absolute -right-1 -top-1 hidden group-hover:flex items-center gap-0.5 bg-card rounded-full shadow-sm border border-border px-1">
+                          <button
+                            type="button"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              handleOpenCategoryModal(customData || undefined);
+                            }}
+                            className="p-0.5 text-muted-foreground hover:text-foreground"
+                            aria-label="Edit category"
+                          >
+                            <Pencil className="h-2.5 w-2.5" />
+                          </button>
+                          <button
+                            type="button"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              handleDeleteCustomCategory(cat);
+                            }}
+                            className="p-0.5 text-muted-foreground hover:text-red-500"
+                            aria-label="Delete category"
+                          >
+                            <Trash2 className="h-2.5 w-2.5" />
+                          </button>
+                        </div>
+                      )}
+                    </div>
                   );
                 })}
                 <button
                   type="button"
-                  onClick={handleAddCategory}
+                  onClick={() => handleOpenCategoryModal()}
                   className="px-3 py-1.5 rounded-xl text-xs font-medium border border-dashed border-border text-muted-foreground hover:text-foreground"
                 >
                   <Plus className="h-3 w-3 inline mr-1" />
@@ -343,7 +465,34 @@ export function AddTransactionSheet({
               {t.save}
             </Button>
           </div>
+
+          {!isEdit && (
+            <div className="flex items-center gap-2 pt-2">
+              <input
+                type="checkbox"
+                id="addMore"
+                checked={addMore}
+                onChange={(e) => setAddMore(e.target.checked)}
+                className="h-4 w-4 rounded border-border text-primary focus:ring-primary"
+              />
+              <label
+                htmlFor="addMore"
+                className="text-xs text-muted-foreground cursor-pointer select-none"
+              >
+                {lang === "th" ? "บันทึกและเพิ่มรายการอีก" : "Save and add another"}
+              </label>
+            </div>
+          )}
         </div>
+
+        {/* Category Modal for adding/editing custom categories */}
+        <CategoryModal
+          open={categoryModalOpen}
+          onOpenChange={setCategoryModalOpen}
+          type={type}
+          editCategory={editingCategory}
+          onSubmit={handleCategoryModalSubmit}
+        />
       </SheetContent>
     </Sheet>
   );

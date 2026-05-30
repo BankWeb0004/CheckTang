@@ -96,27 +96,31 @@ function HistoryRow({
       : tx.note || "—";
 
   return (
-    <div className="relative overflow-hidden">
-      {/* Hidden actions */}
+    <div className="relative overflow-hidden" style={{ maxWidth: "100%" }}>
+      {/* Hidden actions - isolated layer (positioned off-screen to the right) */}
       <div
-        className="absolute right-0 top-0 bottom-0 flex items-center gap-1 pr-1"
-        style={{ width: MAX_SWIPE }}
+        className="absolute right-0 top-0 bottom-0 flex items-center gap-1 pr-1 z-0"
+        style={{ width: MAX_SWIPE, maxWidth: MAX_SWIPE, transform: "translateX(100%)" }}
       >
         <button
-          onClick={() => onEdit?.(tx)}
-          className="h-9 w-9 rounded-lg bg-muted text-foreground flex items-center justify-center"
+          onClick={(e) => {
+            e.stopPropagation();
+            onEdit?.(tx);
+          }}
+          className="h-9 w-9 rounded-lg bg-muted text-foreground flex items-center justify-center flex-shrink-0"
           aria-label="edit"
         >
           <Pencil className="h-4 w-4" />
         </button>
         <button
-          onClick={() => {
+          onClick={(e) => {
+            e.stopPropagation();
             if (window.confirm(t.confirmDelete)) {
               deleteTransaction(tx.id);
               toast.success(lang === "th" ? "ลบแล้ว" : "Deleted");
             }
           }}
-          className="h-9 w-9 rounded-lg flex items-center justify-center"
+          className="h-9 w-9 rounded-lg flex items-center justify-center flex-shrink-0"
           style={{ background: "var(--expense)", color: "#fff" }}
           aria-label="delete"
         >
@@ -124,7 +128,7 @@ function HistoryRow({
         </button>
       </div>
 
-      {/* Row */}
+      {/* Row - slides left to reveal actions underneath */}
       <div
         onPointerDown={onPointerDown}
         onPointerMove={onPointerMove}
@@ -139,8 +143,10 @@ function HistoryRow({
           }
         }}
         onDoubleClick={() => onEdit?.(tx)}
-        className="flex items-center gap-2.5 px-3 py-2 bg-card cursor-pointer select-none transition-transform"
-        style={{ transform: `translateX(${offset}px)` }}
+        className="flex items-center gap-2.5 px-3 py-2 bg-card cursor-pointer select-none transition-transform will-change-transform relative z-10"
+        style={{ 
+          transform: `translateX(${offset}px)`,
+        }}
       >
         <div className="h-8 w-8 flex-shrink-0 rounded-lg bg-muted flex items-center justify-center text-base">
           {tx.type === "transfer" ? "🔁" : tx.category_emoji || "🏷️"}
