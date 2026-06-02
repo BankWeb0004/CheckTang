@@ -137,10 +137,10 @@ export function WalletDetailSheet({ walletId, open, onOpenChange, onEdit }: Prop
               </div>
             </div>
 
-            {/* Scrollable list — locked height container, prevents tab bounce */}
+            {/* Scrollable list — the ONLY scrolling region. Upper section stays locked. */}
             <div
-              className="flex-1 min-h-[280px] overflow-y-auto mt-2 -mx-1 px-1"
-              style={{ WebkitOverflowScrolling: "touch" }}
+              className="flex-1 min-h-0 overflow-y-auto mt-2 -mx-1 px-1"
+              style={{ WebkitOverflowScrolling: "touch", overscrollBehavior: "contain" }}
             >
               <HistoryList
                 transactions={filtered}
