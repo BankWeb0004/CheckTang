@@ -4,11 +4,12 @@ import { SmartAmount } from "@/components/expense/SmartAmount";
 import { HistoryList } from "@/components/expense/HistoryList";
 import {
   Sheet,
+  SheetClose,
   SheetContent,
   SheetHeader,
   SheetTitle,
 } from "@/components/ui/sheet";
-import { ArrowDownLeft, ArrowUpRight } from "lucide-react";
+import { ArrowDownLeft, ArrowUpRight, X } from "lucide-react";
 
 
 interface Props {
@@ -80,10 +81,16 @@ export function WalletDetailSheet({ walletId, open, onOpenChange, onEdit }: Prop
     <Sheet open={open} onOpenChange={onOpenChange}>
       <SheetContent
         side="bottom"
-        className="rounded-t-3xl h-[88vh] max-h-[88vh] p-0 flex flex-col gap-0"
+        showClose={false}
+        className="rounded-t-3xl h-[88dvh] max-h-[88dvh] p-0 flex flex-col gap-0 overflow-hidden"
         onPointerDownOutside={(e) => e.preventDefault()}
         onInteractOutside={(e) => e.preventDefault()}
       >
+        <SheetClose className="absolute right-4 top-4 z-20 h-4 w-4 p-0 flex items-center justify-center opacity-70 transition-opacity hover:opacity-100 focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2">
+          <X className="h-4 w-4" />
+          <span className="sr-only">Close</span>
+        </SheetClose>
+
         <SheetHeader className="px-6 pt-6 pb-2 shrink-0 space-y-0">
           <SheetTitle className="text-center text-base font-semibold pr-8">
             {wallet ? `${wallet.emoji} ${wallet.name}` : "—"}
@@ -91,9 +98,9 @@ export function WalletDetailSheet({ walletId, open, onOpenChange, onEdit }: Prop
         </SheetHeader>
 
         {wallet && (
-          <div className="flex-1 min-h-0 flex flex-col px-6 pb-6">
+          <div className="flex-1 min-h-0 grid grid-rows-[auto_minmax(0,1fr)] px-6 pb-6 overflow-hidden">
             {/* Balance + month stats — fixed top region */}
-            <div className="shrink-0 space-y-3 pt-1">
+            <div className="min-h-0 space-y-3 pt-1 overflow-hidden">
               <div className="text-center py-1">
                 <div className="text-[11px] uppercase tracking-widest text-muted-foreground">
                   {t.balance}
@@ -139,8 +146,12 @@ export function WalletDetailSheet({ walletId, open, onOpenChange, onEdit }: Prop
 
             {/* Scrollable list — the ONLY scrolling region. Upper section stays locked. */}
             <div
-              className="flex-1 min-h-0 overflow-y-auto mt-2 -mx-1 px-1"
-              style={{ WebkitOverflowScrolling: "touch", overscrollBehavior: "contain" }}
+              className="min-h-0 h-full overflow-y-auto mt-2 -mx-1 px-1"
+              style={{
+                WebkitOverflowScrolling: "touch",
+                overscrollBehavior: "contain",
+                contain: "layout style",
+              }}
             >
               <HistoryList
                 transactions={filtered}

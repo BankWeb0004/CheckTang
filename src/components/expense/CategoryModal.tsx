@@ -11,6 +11,41 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
 
+const splitGraphemes = (value: string) => {
+  const Segmenter = (Intl as typeof Intl & {
+    Segmenter?: new (
+      locale?: string,
+      options?: { granularity: "grapheme" },
+    ) => { segment: (input: string) => Iterable<{ segment: string }> };
+  }).Segmenter;
+
+  if (Segmenter) {
+    const segmenter = new Segmenter(undefined, { granularity: "grapheme" });
+    return Array.from(segmenter.segment(value), (part) => part.segment);
+  }
+
+  return Array.from(value);
+};
+
+const isEmojiGrapheme = (value: string) =>
+  /[\p{Emoji_Presentation}\p{Extended_Pictographic}]/u.test(value);
+
+const getFirstGrapheme = (value: string) => splitGraphemes(value.trim())[0] ?? "";
+
+const stripOuterEmojiGraphemes = (value: string) => {
+  const graphemes = splitGraphemes(value.trim());
+
+  while (graphemes.length > 0 && isEmojiGrapheme(graphemes[0])) {
+    graphemes.shift();
+  }
+
+  while (graphemes.length > 0 && isEmojiGrapheme(graphemes[graphemes.length - 1])) {
+    graphemes.pop();
+  }
+
+  return graphemes.join("").trim();
+};
+
 interface CategoryModalProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
@@ -43,12 +78,7 @@ export function CategoryModal({
   }, [open, editCategory]);
 
   const handleSubmit = () => {
-    // Strip any leading/trailing emoji from the name so we don't display
-    // the emoji twice (the picker emoji is rendered separately).
-    const stripped = name
-      .replace(/^[\p{Emoji_Presentation}\p{Extended_Pictographic}\u200d\uFE0F\s]+/u, "")
-      .replace(/[\p{Emoji_Presentation}\p{Extended_Pictographic}\u200d\uFE0F\s]+$/u, "")
-      .trim();
+    const stripped = stripOuterEmojiGraphemes(name);
     const trimmedName = stripped || name.trim();
     if (!trimmedName) return;
     onSubmit(trimmedName, emoji);
@@ -59,14 +89,7 @@ export function CategoryModal({
 
 
   const handleEmojiChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const value = e.target.value;
-    // Only allow the first character (single emoji/character)
-    if (value.length <= 1) {
-      setEmoji(value);
-    } else {
-      // If user pastes multiple characters, take only the first one
-      setEmoji(value.charAt(0));
-    }
+    setEmoji(getFirstGrapheme(e.target.value));
   };
 
   return (
@@ -88,7 +111,6 @@ export function CategoryModal({
               type="text"
               value={emoji}
               onChange={handleEmojiChange}
-              maxLength={1}
               placeholder={t.emojiPlaceholder}
               className="h-12 text-2xl text-center rounded-xl"
             />
