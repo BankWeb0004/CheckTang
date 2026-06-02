@@ -78,12 +78,52 @@ export default defineConfig({
       // Optimize chunk splitting
       rollupOptions: {
         output: {
-          // Manual chunk splitting for better caching
-          manualChunks: {
-            'vendor-react': ['react', 'react-dom'],
-            'vendor-router': ['@tanstack/react-router', '@tanstack/react-start'],
-            'vendor-ui': ['@radix-ui/react-dialog', '@radix-ui/react-select', '@radix-ui/react-tabs'],
-            'vendor-charts': ['recharts'],
+          // Dynamic manual chunk splitting that safely filters out external modules
+          // This prevents conflicts with TanStack Start's SSR external module handling
+          manualChunks(id) {
+            // CRITICAL: Never chunk react, react-dom, or @tanstack core modules
+            // as they are marked as external by TanStack Start for SSR
+            if (id.includes('node_modules')) {
+              // Explicitly exclude framework packages that are external
+              if (
+                id.includes('react') ||
+                id.includes('react-dom') ||
+                id.includes('@tanstack/react-start') ||
+                id.includes('@tanstack/react-router/dist/esm')
+              ) {
+                return null;
+              }
+
+              // Chunk UI libraries for better code splitting
+              if (id.includes('@radix-ui')) {
+                return 'vendor-ui';
+              }
+
+              // Chunk chart libraries
+              if (id.includes('recharts') || id.includes('victory')) {
+                return 'vendor-charts';
+              }
+
+              // Chunk form and validation libraries
+              if (id.includes('@hookform') || id.includes('react-hook-form') || id.includes('zod')) {
+                return 'vendor-forms';
+              }
+
+              // Chunk other important vendors
+              if (
+                id.includes('date-fns') ||
+                id.includes('lucide-react') ||
+                id.includes('embla-carousel') ||
+                id.includes('react-resizable-panels')
+              ) {
+                return 'vendor-utils';
+              }
+
+              // Default vendor chunk for everything else in node_modules
+              return 'vendor';
+            }
+
+            return null;
           },
           // Consistent chunk naming
           chunkFileNames: 'assets/[name]-[hash].js',

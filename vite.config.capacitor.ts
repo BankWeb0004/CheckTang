@@ -41,11 +41,51 @@ export default defineConfig({
         main: resolve(__dirname, 'index.html'),
       },
       output: {
-        // Manual chunk splitting for better caching and faster initial load
-        manualChunks: {
-          'vendor-react': ['react', 'react-dom'],
-          'vendor-router': ['@tanstack/react-router'],
-          'vendor-charts': ['recharts'],
+        // Dynamic manual chunk splitting that safely filters out external modules
+        // This prevents conflicts with framework package handling
+        manualChunks(id) {
+          // Never chunk react, react-dom, or @tanstack core modules
+          if (id.includes('node_modules')) {
+            // Explicitly exclude framework packages
+            if (
+              id.includes('react') ||
+              id.includes('react-dom') ||
+              id.includes('@tanstack/react-start') ||
+              id.includes('@tanstack/react-router/dist/esm')
+            ) {
+              return null;
+            }
+
+            // Chunk UI libraries for better code splitting
+            if (id.includes('@radix-ui')) {
+              return 'vendor-ui';
+            }
+
+            // Chunk chart libraries
+            if (id.includes('recharts') || id.includes('victory')) {
+              return 'vendor-charts';
+            }
+
+            // Chunk form and validation libraries
+            if (id.includes('@hookform') || id.includes('react-hook-form') || id.includes('zod')) {
+              return 'vendor-forms';
+            }
+
+            // Chunk other important vendors
+            if (
+              id.includes('date-fns') ||
+              id.includes('lucide-react') ||
+              id.includes('embla-carousel') ||
+              id.includes('react-resizable-panels')
+            ) {
+              return 'vendor-utils';
+            }
+
+            // Default vendor chunk for everything else in node_modules
+            return 'vendor';
+          }
+
+          return null;
         },
         // Consistent chunk naming with relative paths
         chunkFileNames: 'assets/[name]-[hash].js',
