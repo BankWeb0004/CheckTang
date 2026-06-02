@@ -9,8 +9,13 @@ import { VitePWA } from "vite-plugin-pwa";
 import { existsSync, readFileSync, writeFileSync } from "node:fs";
 import { resolve } from "node:path";
 
-// TanStack Start prerender expects dist/server/server.js, but the Cloudflare
-// plugin emits a hashed worker entry under assets/. Read wrangler.json main.
+/**
+ * CRITICAL: Ensure server.js is output without hash so TanStack Start's prerender
+ * can find it immediately during the preview phase.
+ * 
+ * The Cloudflare plugin may update wrangler.json with hashed references, but we
+ * need the actual entry file available at a stable location for prerender.
+ */
 function aliasServerOutput() {
   return {
     name: "alias-server-output",
@@ -22,6 +27,15 @@ function aliasServerOutput() {
         const dir = resolve(process.cwd(), "dist/server");
         const wranglerPath = resolve(dir, "wrangler.json");
         const dst = resolve(dir, "server.js");
+
+        // Only create alias if server.js doesn't already exist or needs updating
+        if (existsSync(dst)) {
+          // If server.js was output directly by Vite (no hash), skip alias creation
+          const currentContent = readFileSync(dst, "utf-8");
+          if (!currentContent.includes("export { default }")) {
+            return; // This is the actual entry file, not an alias
+          }
+        }
 
         let mainEntry: string | undefined;
 
@@ -78,6 +92,25 @@ export default defineConfig({
       // Optimize chunk splitting
       rollupOptions: {
         output: {
+          /**
+           * CRITICAL: Dynamic entry file naming to ensure server.js is available
+           * for TanStack Start's prerender without hashing.
+           * 
+           * The prerender plugin needs dist/server/server.js to exist immediately
+           * after build, BEFORE the alias plugin runs. By outputting the server
+           * entry without hash, we guarantee it's at the expected location.
+           */
+          entryFileNames(chunkInfo) {
+            // IMPORTANT: Server entry must NOT be hashed so prerender can find it
+            // This ensures dist/server/server.js exists for the preview server
+            if (chunkInfo.name === 'server') {
+              return '[name].js'; // Output as dist/server/server.js (no hash, no assets/)
+            }
+            
+            // Client and other entries use hashed names in assets folder for cache busting
+            return 'assets/[name]-[hash].js';
+          },
+          
           // Dynamic manual chunk splitting that safely filters out external modules
           // This prevents conflicts with TanStack Start's SSR external module handling
           manualChunks(id) {
@@ -125,9 +158,9 @@ export default defineConfig({
 
             return null;
           },
+          
           // Consistent chunk naming
           chunkFileNames: 'assets/[name]-[hash].js',
-          entryFileNames: 'assets/[name]-[hash].js',
           assetFileNames: 'assets/[name]-[hash].[ext]',
         },
       },
