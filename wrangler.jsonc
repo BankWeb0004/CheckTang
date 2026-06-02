@@ -1,45 +1,12 @@
 {
   "$schema": "node_modules/wrangler/config-schema.json",
-  "name": "tanstack-start-app",
+  "name": "checktang",
   "compatibility_date": "2025-09-24",
   "compatibility_flags": ["nodejs_compat"],
   
-  // CRITICAL: Server entry point (pre-built by Vite)
+  // Functions handler for dynamic routes (SSR)
   "main": "dist/server/server.js",
   
-  // Build command for Vite SSR
-  "build": {
-    "command": "npm run build",
-    "cwd": "."
-  },
-  
-  // CRITICAL: Directory containing static client assets (HTML, CSS, JS, images)
-  // This tells Cloudflare Pages where to find and serve /assets/, /manifest.json, etc.
-  "pages_build_output_dir": "dist/client",
-  
-  // CRITICAL: Routes configuration for Cloudflare Pages
-  // - Static assets are served directly from pages_build_output_dir
-  // - Everything else (including / and dynamic routes) goes to the SSR handler
-  "routes": [
-    // Serve static assets with long cache (fingerprinted by Vite with hashes)
-    {
-      "pattern": "^/assets/.*",
-      "zone_name": "workers.dev"
-    },
-    // Serve manifest.json and other static files with cache
-    {
-      "pattern": "^/(manifest\\.json|registerSW\\.js|sw\\.js)$",
-      "zone_name": "workers.dev"
-    },
-    // Serve favicons and public files
-    {
-      "pattern": "^/(favicon|apple-touch-icon|icon-.*|android-chrome-.*)\\..*",
-      "zone_name": "workers.dev"
-    },
-    // All other routes: delegate to SSR handler
-    {
-      "pattern": ".*",
-      "zone_name": "workers.dev"
-    }
-  ]
+  // Static assets directory for Cloudflare Pages
+  "pages_build_output_dir": "dist/client"
 }
