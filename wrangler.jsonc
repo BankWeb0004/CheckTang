@@ -1,7 +1,7 @@
 {
-  "$schema": "node_modules/wrappers/config-schema.json",
+  "$schema": "node_modules/wrangler/config-schema.json",
   "name": "checktang",
   "compatibility_date": "2025-09-24",
   "compatibility_flags": ["nodejs_compat"],
-  "pages_build_output_dir": "dist/client"
+  "main": "dist/server/server.js"
 }
