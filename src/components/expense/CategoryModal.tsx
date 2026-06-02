@@ -12,8 +12,15 @@ import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
 
 const splitGraphemes = (value: string) => {
-  if (typeof Intl !== "undefined" && "Segmenter" in Intl) {
-    const segmenter = new Intl.Segmenter(undefined, { granularity: "grapheme" });
+  const Segmenter = (Intl as typeof Intl & {
+    Segmenter?: new (
+      locale?: string,
+      options?: { granularity: "grapheme" },
+    ) => { segment: (input: string) => Iterable<{ segment: string }> };
+  }).Segmenter;
+
+  if (Segmenter) {
+    const segmenter = new Segmenter(undefined, { granularity: "grapheme" });
     return Array.from(segmenter.segment(value), (part) => part.segment);
   }
 
