@@ -6,8 +6,28 @@
 // You can pass additional config via defineConfig({ vite: { ... } }) if needed.
 import { defineConfig } from "@lovable.dev/vite-tanstack-config";
 import { VitePWA } from "vite-plugin-pwa";
-import { existsSync, readFileSync, writeFileSync } from "node:fs";
+import { existsSync, readFileSync, writeFileSync, copyFileSync } from "node:fs";
 import { resolve } from "node:path";
+
+/**
+ * CRITICAL: Copy _routes.json to dist/client so Cloudflare Pages can use it
+ * to determine routing rules (static vs dynamic/SSR)
+ */
+function copyRoutesFile() {
+  return {
+    name: "copy-routes-file",
+    apply: "build" as const,
+    writeBundle() {
+      const src = resolve(process.cwd(), "public", "_routes.json");
+      const dst = resolve(process.cwd(), "dist", "client", "_routes.json");
+      
+      if (existsSync(src)) {
+        console.log("✓ Copying _routes.json to dist/client");
+        copyFileSync(src, dst);
+      }
+    },
+  };
+}
 
 /**
  * CRITICAL: Ensure server.js is output without hash so TanStack Start's prerender
@@ -82,6 +102,9 @@ export default defineConfig({
   vite: {
     // Use relative paths for Capacitor builds (file:// protocol compatibility)
     base: isCapacitorBuild ? './' : '/',
+    
+    // Public directory (will be copied to dist/client/)
+    publicDir: 'public',
     
     // Optimized build configuration
     build: {
@@ -168,6 +191,8 @@ export default defineConfig({
       chunkSizeWarningLimit: 1000,
       // Enable source maps only in dev
       sourcemap: false,
+      // CRITICAL: Copy public/ folder to dist/ (includes _routes.json)
+      copyPublicDir: true,
     },
     
     // Optimize dependencies
@@ -176,6 +201,7 @@ export default defineConfig({
     },
     
     plugins: [
+      copyRoutesFile(),
       aliasServerOutput(),
       VitePWA({
 
