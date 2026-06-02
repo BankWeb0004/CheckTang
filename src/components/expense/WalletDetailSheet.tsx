@@ -80,9 +80,11 @@ export function WalletDetailSheet({ walletId, open, onOpenChange, onEdit }: Prop
     <Sheet open={open} onOpenChange={onOpenChange}>
       <SheetContent
         side="bottom"
-        className="rounded-t-3xl h-[88vh] max-h-[88vh] p-0 flex flex-col"
+        className="rounded-t-3xl h-[88vh] max-h-[88vh] p-0 flex flex-col gap-0"
+        onPointerDownOutside={(e) => e.preventDefault()}
+        onInteractOutside={(e) => e.preventDefault()}
       >
-        <SheetHeader className="px-6 pt-6 pb-2 shrink-0">
+        <SheetHeader className="px-6 pt-6 pb-2 shrink-0 space-y-0">
           <SheetTitle className="text-center text-base font-semibold pr-8">
             {wallet ? `${wallet.emoji} ${wallet.name}` : "—"}
           </SheetTitle>
