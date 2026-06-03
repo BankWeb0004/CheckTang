@@ -354,7 +354,15 @@ export const translations = {
       Other: "Other",
     } as Record<string, string>,
     methods: { Cash: "Cash", Bank: "Bank", Card: "Card" },
-
+    monthlySavings: "Net Savings",
+    totalIncome: "Total Income",
+    totalExpense: "Total Expenses",
+    adjustBalance: "Adjust Balance",
+    newActualBalance: "New Actual Balance",
+    adjustBalanceHint: "We'll log a correction entry for the difference.",
+    adjustBalanceSuccess: "Balance adjusted",
+    adjustmentCategory: "Balance Adjustment",
+    noChange: "Balance is already up to date",
   },
   th: {
     appName: "เช็คตังค์",
