@@ -466,7 +466,15 @@ export const translations = {
       Other: "อื่นๆ",
     } as Record<string, string>,
     methods: { Cash: "เงินสด", Bank: "ธนาคาร", Card: "บัตร" },
-
+    monthlySavings: "เงินคงเหลือของเดือน",
+    totalIncome: "รายรับรวม",
+    totalExpense: "รายจ่ายรวม",
+    adjustBalance: "ปรับยอดเงิน",
+    newActualBalance: "ยอดเงินจริงปัจจุบัน",
+    adjustBalanceHint: "ระบบจะบันทึกรายการปรับยอดส่วนต่างให้อัตโนมัติ",
+    adjustBalanceSuccess: "ปรับยอดเรียบร้อย",
+    adjustmentCategory: "ปรับยอดเงิน",
+    noChange: "ยอดตรงกับยอดในแอปแล้ว",
   },
 } as const;
 
