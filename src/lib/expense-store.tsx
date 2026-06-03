@@ -354,6 +354,7 @@ export const translations = {
       Investment: "Investment",
       Utilities: "Utilities",
       Other: "Other",
+      __adjustment: "Balance Adjustment",
     } as Record<string, string>,
     methods: { Cash: "Cash", Bank: "Bank", Card: "Card" },
     monthlySavings: "Net Savings",
