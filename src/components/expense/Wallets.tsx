@@ -1,10 +1,11 @@
 import { useState } from "react";
 import { useStore } from "@/lib/expense-store";
 import { SmartAmount } from "@/components/expense/SmartAmount";
+import { AdjustBalanceModal } from "@/components/expense/AdjustBalanceModal";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Plus, Trash2 } from "lucide-react";
+import { Plus, Trash2, Scale } from "lucide-react";
 import { toast } from "sonner";
 
 interface Props {
@@ -15,6 +16,7 @@ export function Wallets({ onOpenWallet }: Props) {
   const { walletsWithBalance, addWallet, deleteWallet, t, lang } = useStore();
   const [name, setName] = useState("");
   const [emoji, setEmoji] = useState("👛");
+  const [adjustId, setAdjustId] = useState<string | null>(null);
 
   const handleAdd = (e: React.FormEvent) => {
     e.preventDefault();
@@ -82,25 +84,46 @@ export function Wallets({ onOpenWallet }: Props) {
                 <div className="text-[11px] text-muted-foreground truncate">{w.name}</div>
                 <SmartAmount value={w.balance} className="text-base font-semibold" />
               </div>
-              {walletsWithBalance.length > 1 && (
+              <div className="flex items-center gap-0.5 flex-shrink-0">
                 <button
                   onClick={(e) => {
                     e.stopPropagation();
-                    if (window.confirm(t.confirmDeleteWallet)) {
-                      deleteWallet(w.id);
-                      toast.success(lang === "th" ? "ลบแล้ว" : "Deleted");
-                    }
+                    setAdjustId(w.id);
                   }}
-                  className="opacity-0 group-hover:opacity-100 transition-opacity p-1.5 rounded-lg text-muted-foreground hover:text-destructive"
-                  aria-label={t.deleteWallet}
+                  className="p-1.5 rounded-lg text-muted-foreground hover:text-primary hover:bg-muted transition-colors"
+                  aria-label={t.adjustBalance}
+                  title={t.adjustBalance}
                 >
-                  <Trash2 className="h-4 w-4" />
+                  <Scale className="h-4 w-4" />
                 </button>
-              )}
+                {walletsWithBalance.length > 1 && (
+                  <button
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      if (window.confirm(t.confirmDeleteWallet)) {
+                        deleteWallet(w.id);
+                        toast.success(lang === "th" ? "ลบแล้ว" : "Deleted");
+                      }
+                    }}
+                    className="opacity-0 group-hover:opacity-100 transition-opacity p-1.5 rounded-lg text-muted-foreground hover:text-destructive"
+                    aria-label={t.deleteWallet}
+                  >
+                    <Trash2 className="h-4 w-4" />
+                  </button>
+                )}
+              </div>
             </div>
           </Card>
         ))}
       </div>
+
+      <AdjustBalanceModal
+        walletId={adjustId}
+        open={!!adjustId}
+        onOpenChange={(o) => {
+          if (!o) setAdjustId(null);
+        }}
+      />
     </div>
   );
 }
