@@ -467,6 +467,7 @@ export const translations = {
       Investment: "การลงทุน",
       Utilities: "ค่าสาธารณูปโภค",
       Other: "อื่นๆ",
+      __adjustment: "ปรับยอดเงิน",
     } as Record<string, string>,
     methods: { Cash: "เงินสด", Bank: "ธนาคาร", Card: "บัตร" },
     monthlySavings: "เงินคงเหลือของเดือน",
