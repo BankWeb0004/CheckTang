@@ -521,6 +521,7 @@ interface StoreCtx {
   addTransactions: (items: NewTransactionInput[]) => void;
   updateTransaction: (id: string, patch: Partial<NewTransactionInput>) => void;
   deleteTransaction: (id: string) => void;
+  adjustWalletBalance: (walletId: string, newBalance: number, note?: string) => boolean;
   setWallets: (wallets: Wallet[]) => void;
   setTransactions: (transactions: Transaction[]) => void;
 
