@@ -919,6 +919,31 @@ export function ExpenseProvider({ children }: { children: ReactNode }) {
   const deleteTransaction = (id: string) =>
     setTransactions((prev) => prev.filter((t) => t.id !== id));
 
+  const adjustWalletBalance: StoreCtx["adjustWalletBalance"] = (walletId, newBalance, note) => {
+    const current = walletBalances.get(walletId) ?? 0;
+    const target = Math.round(Number(newBalance) * 100) / 100;
+    const diff = Math.round((target - current) * 100) / 100;
+    if (!Number.isFinite(diff) || diff === 0) return false;
+    const today = new Date();
+    const tzOffset = today.getTimezoneOffset() * 60000;
+    const localISO = new Date(today.getTime() - tzOffset).toISOString().slice(0, 10);
+    const tx: Transaction = {
+      id: crypto.randomUUID(),
+      wallet_id: walletId,
+      to_wallet_id: null,
+      type: diff > 0 ? "income" : "expense",
+      amount: Math.abs(diff),
+      category_name: ADJUSTMENT_CATEGORY,
+      category_emoji: "⚖️",
+      note: note?.trim() ?? "",
+      date: localISO,
+      createdAt: Date.now(),
+    };
+    setTransactions((prev) => [tx, ...prev]);
+    return true;
+  };
+
+
   const setWalletsImpl = (newWallets: Wallet[]) => {
     setWallets(newWallets);
   };
