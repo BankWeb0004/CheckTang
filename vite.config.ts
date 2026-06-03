@@ -183,8 +183,8 @@ export default defineConfig({
     },
     
     plugins: [
-      copyRoutesFile(),
       aliasServerOutput(),
+
       VitePWA({
 
         // Use custom service worker from public/sw.js
