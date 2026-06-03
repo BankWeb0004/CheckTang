@@ -244,6 +244,8 @@ export const DEFAULT_CATEGORY_EMOJI: Record<string, string> = {
   Other: "📦",
 };
 
+export const ADJUSTMENT_CATEGORY = "__adjustment";
+
 /* =======================================================================
  *  TRANSLATIONS
  * ===================================================================== */
