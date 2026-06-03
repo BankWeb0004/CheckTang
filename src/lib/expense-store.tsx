@@ -1103,6 +1103,7 @@ export function ExpenseProvider({ children }: { children: ReactNode }) {
         addTransactions,
         updateTransaction,
         deleteTransaction,
+        adjustWalletBalance,
         setWallets: setWalletsImpl,
         setTransactions: setTransactionsImpl,
 
