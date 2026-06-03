@@ -1,9 +1,10 @@
-import { useMemo } from "react";
-import { useStore, getCategoryLabel, DEFAULT_CATEGORY_EMOJI } from "@/lib/expense-store";
+import { useMemo, useState } from "react";
+import { useStore, getCategoryLabel, DEFAULT_CATEGORY_EMOJI, ADJUSTMENT_CATEGORY } from "@/lib/expense-store";
 import { SmartAmount } from "@/components/expense/SmartAmount";
+import { MonthPicker, nowMonth, isTxInMonth } from "@/components/expense/MonthPicker";
 import { Card } from "@/components/ui/card";
 import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip } from "recharts";
-import { ArrowDownLeft, ArrowUpRight, Wallet } from "lucide-react";
+import { ArrowDownLeft, ArrowUpRight, Wallet, PiggyBank } from "lucide-react";
 
 const CHART_COLORS = [
   "oklch(0.65 0.18 30)",
@@ -24,26 +25,21 @@ interface CategoryRow {
 }
 
 export function Dashboard() {
-  const { transactions, t, lang, netWorth } = useStore();
+  const { transactions, t, netWorth } = useStore();
+  const [month, setMonth] = useState(() => nowMonth());
 
   const { incomeMonth, expenseMonth, byCategoryExpense, total } = useMemo(() => {
-    const now = new Date();
-    const m = now.getMonth();
-    const y = now.getFullYear();
-    const thisMonth = transactions.filter((tx) => {
-      const d = new Date(tx.date);
-      return d.getMonth() === m && d.getFullYear() === y;
-    });
-    const inc = thisMonth
+    const inMonth = transactions.filter((tx) => isTxInMonth(tx.date, month));
+    const inc = inMonth
       .filter((tx) => tx.type === "income")
       .reduce((s, tx) => s + tx.amount, 0);
-    const exp = thisMonth
+    const exp = inMonth
       .filter((tx) => tx.type === "expense")
       .reduce((s, tx) => s + tx.amount, 0);
 
     const cats: Record<string, { value: number; emoji: string }> = {};
-    thisMonth
-      .filter((tx) => tx.type === "expense")
+    inMonth
+      .filter((tx) => tx.type === "expense" && tx.category_name !== ADJUSTMENT_CATEGORY)
       .forEach((tx) => {
         const key = tx.category_name;
         if (!cats[key]) cats[key] = { value: 0, emoji: tx.category_emoji || DEFAULT_CATEGORY_EMOJI[key] || "" };
@@ -63,22 +59,16 @@ export function Dashboard() {
       incomeMonth: inc,
       expenseMonth: exp,
       byCategoryExpense: rows,
-      total: exp,
+      total: rows.reduce((s, r) => s + r.value, 0),
     };
-  }, [transactions, t.categories]);
+  }, [transactions, month, t.categories]);
 
-  const today = new Date();
-  const dateLabel = today.toLocaleDateString(lang === "th" ? "th-TH" : "en-US", {
-    day: "numeric",
-    month: "short",
-    year: "2-digit",
-  });
+  const netSavings = incomeMonth - expenseMonth;
 
   return (
     <div className="space-y-3">
-      {/* Net worth */}
+      {/* Net worth (global, always current real-world total) */}
       <Card className="card-soft p-5">
-
         <div
           className="flex items-center gap-2 text-sm"
           style={{ color: "var(--muted-foreground)" }}
@@ -89,40 +79,46 @@ export function Dashboard() {
         <div className="mt-2 text-4xl font-semibold tracking-tight text-foreground">
           <SmartAmount value={netWorth} className="text-4xl font-semibold" />
         </div>
-        <div className="mt-1 text-xs" style={{ color: "var(--muted-foreground)" }}>
-          {t.thisMonth}
-        </div>
       </Card>
 
-      {/* Month income/expense */}
-      <div className="grid grid-cols-2 gap-3">
-        <Card className="card-soft p-4">
-          <div className="flex items-center gap-2 text-xs text-muted-foreground">
-            <ArrowDownLeft className="h-3.5 w-3.5" style={{ color: "var(--income)" }} />
-            {t.income}
+      {/* Month picker */}
+      <MonthPicker value={month} onChange={setMonth} />
+
+      {/* Monthly summary cards */}
+      <div className="grid grid-cols-3 gap-2">
+        <Card className="card-soft p-3">
+          <div className="flex items-center gap-1.5 text-[10px] text-muted-foreground">
+            <ArrowDownLeft className="h-3 w-3" style={{ color: "var(--income)" }} />
+            <span className="truncate">{t.totalIncome}</span>
           </div>
-          <div
-            className="mt-1.5 text-lg font-semibold"
-            style={{ color: "var(--income)" }}
-          >
-            <SmartAmount value={incomeMonth} colorize={false} className="text-lg font-semibold" />
+          <div className="mt-1 text-sm font-semibold" style={{ color: "var(--income)" }}>
+            <SmartAmount value={incomeMonth} colorize={false} className="text-sm font-semibold" />
           </div>
         </Card>
-        <Card className="card-soft p-4">
-          <div className="flex items-center gap-2 text-xs text-muted-foreground">
-            <ArrowUpRight className="h-3.5 w-3.5" style={{ color: "var(--expense)" }} />
-            {t.expense}
+        <Card className="card-soft p-3">
+          <div className="flex items-center gap-1.5 text-[10px] text-muted-foreground">
+            <ArrowUpRight className="h-3 w-3" style={{ color: "var(--expense)" }} />
+            <span className="truncate">{t.totalExpense}</span>
+          </div>
+          <div className="mt-1 text-sm font-semibold" style={{ color: "var(--expense)" }}>
+            <SmartAmount value={expenseMonth} colorize={false} className="text-sm font-semibold" />
+          </div>
+        </Card>
+        <Card className="card-soft p-3">
+          <div className="flex items-center gap-1.5 text-[10px] text-muted-foreground">
+            <PiggyBank className="h-3 w-3" />
+            <span className="truncate">{t.monthlySavings}</span>
           </div>
           <div
-            className="mt-1.5 text-lg font-semibold"
-            style={{ color: "var(--expense)" }}
+            className="mt-1 text-sm font-semibold"
+            style={{ color: netSavings >= 0 ? "var(--income)" : "var(--expense)" }}
           >
-            <SmartAmount value={expenseMonth} colorize={false} className="text-lg font-semibold" />
+            <SmartAmount value={netSavings} colorize={false} className="text-sm font-semibold" />
           </div>
         </Card>
       </div>
 
-      {/* Pie + scrollable category list (side-by-side) */}
+      {/* Pie + scrollable category list */}
       <Card className="card-soft p-5">
         <div className="text-sm font-medium mb-4 text-foreground">
           {t.expensesByCategory}
@@ -133,7 +129,6 @@ export function Dashboard() {
           </div>
         ) : (
           <div className="grid grid-cols-1 sm:grid-cols-[1fr_minmax(180px,40%)] gap-4 items-center">
-            {/* LEFT: category list */}
             <div className="max-h-60 overflow-y-auto pr-1 space-y-1.5 order-2 sm:order-1">
               {byCategoryExpense.map((c, i) => {
                 const pct = total > 0 ? (c.value / total) * 100 : 0;
@@ -163,7 +158,6 @@ export function Dashboard() {
               })}
             </div>
 
-            {/* RIGHT: pie */}
             <div className="h-56 order-1 sm:order-2">
               <ResponsiveContainer width="100%" height="100%">
                 <PieChart>

@@ -244,6 +244,8 @@ export const DEFAULT_CATEGORY_EMOJI: Record<string, string> = {
   Other: "📦",
 };
 
+export const ADJUSTMENT_CATEGORY = "__adjustment";
+
 /* =======================================================================
  *  TRANSLATIONS
  * ===================================================================== */
@@ -352,9 +354,18 @@ export const translations = {
       Investment: "Investment",
       Utilities: "Utilities",
       Other: "Other",
+      __adjustment: "Balance Adjustment",
     } as Record<string, string>,
     methods: { Cash: "Cash", Bank: "Bank", Card: "Card" },
-
+    monthlySavings: "Net Savings",
+    totalIncome: "Total Income",
+    totalExpense: "Total Expenses",
+    adjustBalance: "Adjust Balance",
+    newActualBalance: "New Actual Balance",
+    adjustBalanceHint: "We'll log a correction entry for the difference.",
+    adjustBalanceSuccess: "Balance adjusted",
+    adjustmentCategory: "Balance Adjustment",
+    noChange: "Balance is already up to date",
   },
   th: {
     appName: "เช็คตังค์",
@@ -456,9 +467,18 @@ export const translations = {
       Investment: "การลงทุน",
       Utilities: "ค่าสาธารณูปโภค",
       Other: "อื่นๆ",
+      __adjustment: "ปรับยอดเงิน",
     } as Record<string, string>,
     methods: { Cash: "เงินสด", Bank: "ธนาคาร", Card: "บัตร" },
-
+    monthlySavings: "เงินคงเหลือของเดือน",
+    totalIncome: "รายรับรวม",
+    totalExpense: "รายจ่ายรวม",
+    adjustBalance: "ปรับยอดเงิน",
+    newActualBalance: "ยอดเงินจริงปัจจุบัน",
+    adjustBalanceHint: "ระบบจะบันทึกรายการปรับยอดส่วนต่างให้อัตโนมัติ",
+    adjustBalanceSuccess: "ปรับยอดเรียบร้อย",
+    adjustmentCategory: "ปรับยอดเงิน",
+    noChange: "ยอดตรงกับยอดในแอปแล้ว",
   },
 } as const;
 
@@ -505,6 +525,7 @@ interface StoreCtx {
   addTransactions: (items: NewTransactionInput[]) => void;
   updateTransaction: (id: string, patch: Partial<NewTransactionInput>) => void;
   deleteTransaction: (id: string) => void;
+  adjustWalletBalance: (walletId: string, newBalance: number, note?: string) => boolean;
   setWallets: (wallets: Wallet[]) => void;
   setTransactions: (transactions: Transaction[]) => void;
 
@@ -902,6 +923,31 @@ export function ExpenseProvider({ children }: { children: ReactNode }) {
   const deleteTransaction = (id: string) =>
     setTransactions((prev) => prev.filter((t) => t.id !== id));
 
+  const adjustWalletBalance: StoreCtx["adjustWalletBalance"] = (walletId, newBalance, note) => {
+    const current = walletBalances.get(walletId) ?? 0;
+    const target = Math.round(Number(newBalance) * 100) / 100;
+    const diff = Math.round((target - current) * 100) / 100;
+    if (!Number.isFinite(diff) || diff === 0) return false;
+    const today = new Date();
+    const tzOffset = today.getTimezoneOffset() * 60000;
+    const localISO = new Date(today.getTime() - tzOffset).toISOString().slice(0, 10);
+    const tx: Transaction = {
+      id: crypto.randomUUID(),
+      wallet_id: walletId,
+      to_wallet_id: null,
+      type: diff > 0 ? "income" : "expense",
+      amount: Math.abs(diff),
+      category_name: ADJUSTMENT_CATEGORY,
+      category_emoji: "⚖️",
+      note: note?.trim() ?? "",
+      date: localISO,
+      createdAt: Date.now(),
+    };
+    setTransactions((prev) => [tx, ...prev]);
+    return true;
+  };
+
+
   const setWalletsImpl = (newWallets: Wallet[]) => {
     setWallets(newWallets);
   };
@@ -1059,6 +1105,7 @@ export function ExpenseProvider({ children }: { children: ReactNode }) {
         addTransactions,
         updateTransaction,
         deleteTransaction,
+        adjustWalletBalance,
         setWallets: setWalletsImpl,
         setTransactions: setTransactionsImpl,
 
