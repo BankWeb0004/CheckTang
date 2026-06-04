@@ -203,27 +203,64 @@ export function Settings() {
         transactions,
       };
 
-      const blob = new Blob([JSON.stringify(exportData, null, 2)], {
-        type: "application/json",
-      });
-      const url = URL.createObjectURL(blob);
+      const json = JSON.stringify(exportData, null, 2);
       const timestamp = new Date().toISOString().replace(/[:.]/g, "-").slice(0, -5);
       const filename = `checktang_backup_${timestamp}.json`;
 
-      const a = document.createElement("a");
-      a.href = url;
-      a.download = filename;
-      document.body.appendChild(a);
-      a.click();
-      document.body.removeChild(a);
-      URL.revokeObjectURL(url);
+      // Detect native (Capacitor) runtime
+      const isNative =
+        typeof window !== "undefined" &&
+        ((window as any).Capacitor?.isNativePlatform?.() ?? false);
 
-      toast.success(lang === "th" ? "สำรองข้อมูลสำเร็จ" : "Data exported successfully");
+      if (isNative) {
+        // Save to app Documents directory and open share dialog so user can pick destination
+        const { Filesystem, Directory, Encoding } = await import("@capacitor/filesystem");
+        const { Share } = await import("@capacitor/share");
+
+        const writeResult = await Filesystem.writeFile({
+          path: filename,
+          data: json,
+          directory: Directory.Documents,
+          encoding: Encoding.UTF8,
+          recursive: true,
+        });
+
+        try {
+          await Share.share({
+            title: filename,
+            text: lang === "th" ? "ไฟล์สำรองข้อมูล Check Tang" : "Check Tang backup file",
+            url: writeResult.uri,
+            dialogTitle: lang === "th" ? "บันทึกไฟล์สำรองข้อมูล" : "Save backup file",
+          });
+        } catch {
+          // user cancelled share — file is still saved
+        }
+
+        toast.success(
+          lang === "th"
+            ? `บันทึกไว้ที่ Documents/${filename}`
+            : `Saved to Documents/${filename}`,
+          { duration: 5000 }
+        );
+      } else {
+        const blob = new Blob([json], { type: "application/json" });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement("a");
+        a.href = url;
+        a.download = filename;
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        URL.revokeObjectURL(url);
+
+        toast.success(lang === "th" ? "สำรองข้อมูลสำเร็จ" : "Data exported successfully");
+      }
     } catch (error) {
       console.error("Export error:", error);
       toast.error(lang === "th" ? "สำรองข้อมูลล้มเหลว" : "Export failed");
     }
   };
+
 
   // Import data handler
   const handleImportData = async (e: React.ChangeEvent<HTMLInputElement>) => {
