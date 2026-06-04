@@ -4,6 +4,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } f
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
+import { SmartAmount } from "@/components/expense/SmartAmount";
 import { toast } from "sonner";
 
 interface Props {
@@ -61,9 +62,7 @@ export function AdjustBalanceModal({ walletId, open, onOpenChange }: Props) {
           <div className="rounded-xl bg-muted/50 p-3 text-xs">
             <div className="flex justify-between">
               <span className="text-muted-foreground">{wallet.name}</span>
-              <span className="font-semibold tabular-nums">
-                {formatCurrency(wallet.balance, lang, currency)}
-              </span>
+              <SmartAmount value={wallet.balance} className="font-semibold text-sm" colorize={false} />
             </div>
           </div>
 
@@ -72,12 +71,11 @@ export function AdjustBalanceModal({ walletId, open, onOpenChange }: Props) {
               {t.newActualBalance}
             </Label>
             <Input
-              type="number"
+              type="text"
               inputMode="decimal"
-              step="0.01"
               value={value}
-              onChange={(e) => setValue(e.target.value)}
-              className="h-12 rounded-xl text-lg font-semibold text-right tabular-nums mt-1"
+              onChange={(e) => setValue(e.target.value.replace(/[^\d.,-]/g, ""))}
+              className="h-12 rounded-xl text-lg font-semibold text-right tabular-nums mt-1 [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
               autoFocus
             />
           </div>
@@ -90,8 +88,7 @@ export function AdjustBalanceModal({ walletId, open, onOpenChange }: Props) {
                 color: diff > 0 ? "var(--income)" : "var(--expense)",
               }}
             >
-              {diff > 0 ? "+" : ""}
-              {formatCurrency(diff, lang, currency)}
+              <SmartAmount value={diff} prefix={diff > 0 ? "+" : ""} colorize={false} />
             </div>
           )}
 
