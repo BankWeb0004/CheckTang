@@ -62,9 +62,7 @@ export function AdjustBalanceModal({ walletId, open, onOpenChange }: Props) {
           <div className="rounded-xl bg-muted/50 p-3 text-xs">
             <div className="flex justify-between">
               <span className="text-muted-foreground">{wallet.name}</span>
-              <span className="font-semibold tabular-nums">
-                {formatCurrency(wallet.balance, lang, currency)}
-              </span>
+              <SmartAmount value={wallet.balance} className="font-semibold text-sm" colorize={false} />
             </div>
           </div>
 
