@@ -88,8 +88,7 @@ export function AdjustBalanceModal({ walletId, open, onOpenChange }: Props) {
                 color: diff > 0 ? "var(--income)" : "var(--expense)",
               }}
             >
-              {diff > 0 ? "+" : ""}
-              {formatCurrency(diff, lang, currency)}
+              <SmartAmount value={diff} prefix={diff > 0 ? "+" : ""} colorize={false} />
             </div>
           )}
 
