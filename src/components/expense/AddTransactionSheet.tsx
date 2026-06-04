@@ -373,7 +373,7 @@ export function AddTransactionSheet({
                   const emoji = (customData?.emoji || DEFAULT_CATEGORY_EMOJI[cat]) ?? cat.match(/\p{Emoji}/u)?.[0] ?? "🏷️";
                   
                   return (
-                    <div key={cat} className="relative group">
+                    <div key={cat} className="relative inline-flex items-center">
                       <button
                         type="button"
                         onClick={() => setCategory(cat)}
@@ -382,24 +382,26 @@ export function AddTransactionSheet({
                           background: active ? "var(--primary)" : "var(--card)",
                           color: active ? "var(--primary-foreground)" : "var(--foreground)",
                           borderColor: active ? "var(--primary)" : "var(--border)",
+                          paddingRight: isCustom ? "2.75rem" : undefined,
                         }}
                       >
                         <span>{emoji}</span>
                         <span>{label}</span>
                       </button>
-                      {/* Edit/Delete buttons for custom categories (shown on hover) */}
-                      {isCustom && !active && (
-                        <div className="absolute -right-1 -top-1 hidden group-hover:flex items-center gap-0.5 bg-card rounded-full shadow-sm border border-border px-1">
+                      {/* Edit/Delete buttons for custom categories — always visible (mobile-friendly) */}
+                      {isCustom && (
+                        <div className="absolute right-1 top-1/2 -translate-y-1/2 flex items-center gap-0.5">
                           <button
                             type="button"
                             onClick={(e) => {
                               e.stopPropagation();
                               handleOpenCategoryModal(customData || undefined);
                             }}
-                            className="p-0.5 text-muted-foreground hover:text-foreground"
+                            className="p-1 rounded-full hover:bg-black/10 active:bg-black/20"
+                            style={{ color: active ? "var(--primary-foreground)" : "var(--muted-foreground)" }}
                             aria-label="Edit category"
                           >
-                            <Pencil className="h-2.5 w-2.5" />
+                            <Pencil className="h-3 w-3" />
                           </button>
                           <button
                             type="button"
@@ -407,10 +409,11 @@ export function AddTransactionSheet({
                               e.stopPropagation();
                               handleDeleteCustomCategory(cat);
                             }}
-                            className="p-0.5 text-muted-foreground hover:text-red-500"
+                            className="p-1 rounded-full hover:bg-black/10 active:bg-black/20"
+                            style={{ color: active ? "var(--primary-foreground)" : "var(--muted-foreground)" }}
                             aria-label="Delete category"
                           >
-                            <Trash2 className="h-2.5 w-2.5" />
+                            <Trash2 className="h-3 w-3" />
                           </button>
                         </div>
                       )}

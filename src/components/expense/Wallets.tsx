@@ -105,8 +105,9 @@ export function Wallets({ onOpenWallet }: Props) {
                         toast.success(lang === "th" ? "ลบแล้ว" : "Deleted");
                       }
                     }}
-                    className="opacity-0 group-hover:opacity-100 transition-opacity p-1.5 rounded-lg text-muted-foreground hover:text-destructive"
+                    className="p-1.5 rounded-lg text-muted-foreground hover:text-destructive hover:bg-muted transition-colors"
                     aria-label={t.deleteWallet}
+                    title={t.deleteWallet}
                   >
                     <Trash2 className="h-4 w-4" />
                   </button>
