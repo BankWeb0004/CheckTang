@@ -214,34 +214,44 @@ export function Settings() {
 
       if (isNative) {
         // Save to app Documents directory and open share dialog so user can pick destination
-        const { Filesystem, Directory, Encoding } = await import("@capacitor/filesystem");
-        const { Share } = await import("@capacitor/share");
-
-        const writeResult = await Filesystem.writeFile({
-          path: filename,
-          data: json,
-          directory: Directory.Documents,
-          encoding: Encoding.UTF8,
-          recursive: true,
-        });
-
         try {
-          await Share.share({
-            title: filename,
-            text: lang === "th" ? "ไฟล์สำรองข้อมูล Check Tang" : "Check Tang backup file",
-            url: writeResult.uri,
-            dialogTitle: lang === "th" ? "บันทึกไฟล์สำรองข้อมูล" : "Save backup file",
-          });
-        } catch {
-          // user cancelled share — file is still saved
-        }
+          const { Filesystem, Directory, Encoding } = await import(/* @vite-ignore */ "@capacitor/filesystem");
+          const { Share } = await import(/* @vite-ignore */ "@capacitor/share");
 
-        toast.success(
-          lang === "th"
-            ? `บันทึกไว้ที่ Documents/${filename}`
-            : `Saved to Documents/${filename}`,
-          { duration: 5000 }
-        );
+          const writeResult = await Filesystem.writeFile({
+            path: filename,
+            data: json,
+            directory: Directory.Documents,
+            encoding: Encoding.UTF8,
+            recursive: true,
+          });
+
+          try {
+            await Share.share({
+              title: filename,
+              text: lang === "th" ? "ไฟล์สำรองข้อมูล Check Tang" : "Check Tang backup file",
+              url: writeResult.uri,
+              dialogTitle: lang === "th" ? "บันทึกไฟล์สำรองข้อมูล" : "Save backup file",
+            });
+          } catch {
+            // user cancelled share — file is still saved
+          }
+
+          toast.success(
+            lang === "th"
+              ? `บันทึกไว้ที่ Documents/${filename}`
+              : `Saved to Documents/${filename}`,
+            { duration: 5000 }
+          );
+        } catch (error) {
+          console.error("Capacitor modules not available:", error);
+          toast.error(
+            lang === "th"
+              ? "ไม่สามารถบันทึกไฟล์ได้"
+              : "Unable to save file",
+            { duration: 5000 }
+          );
+        }
       } else {
         const blob = new Blob([json], { type: "application/json" });
         const url = URL.createObjectURL(blob);

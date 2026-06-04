@@ -6,8 +6,6 @@
  * because native WebViews handle caching differently and SW can block asset loading.
  */
 
-import { Capacitor } from '@capacitor/core';
-
 export interface UpdateEvent {
   type: 'SW_UPDATE_AVAILABLE' | 'SW_ACTIVATED' | 'SW_OFFLINE' | 'SW_ONLINE';
   version?: string;
@@ -16,8 +14,9 @@ export interface UpdateEvent {
 /**
  * Check if running inside a native Capacitor environment
  */
-function isNativeApp(): boolean {
+async function isNativeApp(): Promise<boolean> {
   try {
+    const { Capacitor } = await import(/* @vite-ignore */ '@capacitor/core');
     return Capacitor.isNativePlatform();
   } catch {
     return false;
@@ -36,7 +35,7 @@ class ServiceWorkerManager {
    */
   async init() {
     // Skip SW registration in native apps - WebView handles caching differently
-    if (isNativeApp()) {
+    if (await isNativeApp()) {
       console.log('Service Worker skipped: Running in native Capacitor environment');
       return;
     }

@@ -71,6 +71,28 @@ function aliasServerOutput() {
 // Detect if building for Capacitor (native mobile)
 const isCapacitorBuild = process.env.CAPACITOR_BUILD === 'true';
 
+/**
+ * Plugin to suppress import-analysis warnings for Capacitor modules
+ * These modules are native-only and won't be bundled in web builds
+ */
+function suppressCapacitorWarnings() {
+  return {
+    name: 'suppress-capacitor-warnings',
+    apply: 'serve',
+    enforce: 'pre',
+    resolveId(id) {
+      // Return empty module for Capacitor imports in dev server
+      if (id.startsWith('@capacitor/')) {
+        return {
+          id,
+          external: true,
+          moduleSideEffects: false,
+        };
+      }
+    },
+  };
+}
+
 export default defineConfig({
   tanstackStart: {
     spa: {
@@ -88,6 +110,12 @@ export default defineConfig({
     // Public directory (will be copied to dist/client/)
     publicDir: 'public',
     
+    // Externalize Capacitor modules for SSR/dev server too
+    ssr: {
+      external: ['@capacitor/filesystem', '@capacitor/share', '@capacitor/core', '@capacitor/android'],
+      noExternal: [],
+    },
+    
     // Optimized build configuration
     build: {
       // Enable minification for production
@@ -96,6 +124,14 @@ export default defineConfig({
       target: 'es2020',
       // Optimize chunk splitting
       rollupOptions: {
+        // Externalize Capacitor modules for web builds (they're native-only)
+        external: (id) => {
+          // Exclude all @capacitor/* modules from web builds
+          if (id.startsWith('@capacitor/')) {
+            return true;
+          }
+          return false;
+        },
         output: {
           /**
            * CRITICAL: Dynamic entry file naming to ensure server.js is available
@@ -180,9 +216,18 @@ export default defineConfig({
     // Optimize dependencies
     optimizeDeps: {
       include: ['react', 'react-dom', 'recharts'],
+      // Exclude Capacitor modules from optimization
+      exclude: ['@capacitor/filesystem', '@capacitor/share', '@capacitor/core', '@capacitor/android'],
+    },
+    
+    // Resolve configuration for external modules
+    resolve: {
+      // Don't try to resolve Capacitor modules - they're external/native-only
+      noExternal: [],
     },
     
     plugins: [
+      suppressCapacitorWarnings(),
       aliasServerOutput(),
 
       VitePWA({
