@@ -75,12 +75,12 @@ const isCapacitorBuild = process.env.CAPACITOR_BUILD === 'true';
  * Plugin to suppress import-analysis warnings for Capacitor modules
  * These modules are native-only and won't be bundled in web builds
  */
-function suppressCapacitorWarnings() {
+function suppressCapacitorWarnings(): import('vite').Plugin {
   return {
     name: 'suppress-capacitor-warnings',
     apply: 'serve',
     enforce: 'pre',
-    resolveId(id) {
+    resolveId(id: string) {
       // Return empty module for Capacitor imports in dev server
       if (id.startsWith('@capacitor/')) {
         return {
