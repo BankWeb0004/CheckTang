@@ -16,9 +16,10 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Check, Upload, X, Sun, Moon, BookOpen, Trash2, Plus, Download } from "lucide-react";
+import { Check, Upload, X, Sun, Moon, BookOpen, Trash2, Plus, Download, Image as ImageIcon } from "lucide-react";
 import { toast } from "sonner";
 import { appConfig } from "@/lib/app-config";
+import { formatCurrency } from "@/lib/expense-store";
 
 /** Compress image client-side: max 1080px wide, JPEG 75%. */
 async function compressImage(file: File): Promise<string> {
