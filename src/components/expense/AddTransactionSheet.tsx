@@ -315,7 +315,6 @@ export function AddTransactionSheet({
               onChange={handleAmountChange}
               placeholder="0.00"
               className="h-14 text-2xl font-semibold rounded-2xl text-center"
-              autoFocus
             />
           </div>
 
