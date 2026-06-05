@@ -800,6 +800,14 @@ export function Settings() {
               {lang === "th" ? "นำเข้าข้อมูล" : "Import"}
             </Button>
           </div>
+          <Button
+            variant="outline"
+            className="w-full h-10 rounded-xl text-sm mt-2"
+            onClick={handleExportImage}
+          >
+            <ImageIcon className="h-4 w-4 mr-2" />
+            {lang === "th" ? "บันทึกเป็นรูปภาพสรุปยอด" : "Save as Summary Image"}
+          </Button>
           <input
             ref={importRef}
             type="file"
