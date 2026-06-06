@@ -713,6 +713,10 @@ export function Settings() {
           </div>
         )}
       </section>
+      <SummaryExportModal
+        open={showSummaryModal}
+        onOpenChange={setShowSummaryModal}
+      />
     </div>
   );
 }
