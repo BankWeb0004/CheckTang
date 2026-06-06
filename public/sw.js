@@ -7,7 +7,7 @@
  * - Auto-update: New versions detected during revalidation are cached for next load
  */
 
-const CACHE_NAME = 'checktang-v1';
+const CACHE_NAME = 'checktang-v2';
 const ASSETS_TO_CACHE = [
   '/',
   '/index.html',
