@@ -68,11 +68,8 @@ export function Settings() {
     openTutorial,
     wallets,
     transactions,
-    addTransactions,
     setWallets,
     setTransactions,
-    walletsWithBalance,
-    netWorth,
   } = useStore();
   const fileRef = useRef<HTMLInputElement>(null);
   const importRef = useRef<HTMLInputElement>(null);
