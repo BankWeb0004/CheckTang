@@ -84,6 +84,7 @@ export function Settings() {
   const [feedbackText, setFeedbackText] = useState("");
   const [isSending, setIsSending] = useState(false);
   const [lastFeedbackTime, setLastFeedbackTime] = useState(0);
+  const [showSummaryModal, setShowSummaryModal] = useState(false);
 
   // Easter egg: Tap footer 7 times within 3 seconds to show PIN modal
   const handleFooterTap = () => {
