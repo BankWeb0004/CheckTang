@@ -581,7 +581,7 @@ export function Settings() {
           <Button
             variant="outline"
             className="w-full h-10 rounded-xl text-sm mt-2"
-            onClick={handleExportImage}
+            onClick={() => setShowSummaryModal(true)}
           >
             <ImageIcon className="h-4 w-4 mr-2" />
             {lang === "th" ? "บันทึกเป็นรูปภาพสรุปยอด" : "Save as Summary Image"}
