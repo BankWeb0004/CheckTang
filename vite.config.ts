@@ -160,8 +160,7 @@ export default defineConfig({
             if (id.includes('node_modules')) {
               // Explicitly exclude framework packages that are external
               if (
-                id.includes('react') ||
-                id.includes('react-dom') ||
+                /[\\/]node_modules[\\/](react|react-dom|scheduler)[\\/]/.test(id) ||
                 id.includes('@tanstack/react-start') ||
                 id.includes('@tanstack/react-router/dist/esm')
               ) {

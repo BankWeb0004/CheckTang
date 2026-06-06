@@ -37,10 +37,29 @@ export function Tutorial({ open, onClose }: Props) {
   if (!open) return null;
 
   const slides = [
-    // Slide 1 — logo
+    // Slide 1 — logo with branded gradient backdrop
     <div key="s1" className="flex flex-col items-center justify-center gap-6 text-foreground">
-      <div className="h-44 w-44 rounded-[2rem] bg-primary/10 flex items-center justify-center">
-        <CheckTangLogo showLabel={false} className="text-primary" />
+      <div
+        className="relative h-48 w-48 rounded-[2rem] flex items-center justify-center overflow-hidden"
+        style={{
+          background:
+            'linear-gradient(135deg, color-mix(in oklab, var(--primary) 22%, transparent), color-mix(in oklab, var(--primary) 6%, transparent))',
+          boxShadow: '0 18px 40px -16px color-mix(in oklab, var(--primary) 45%, transparent)',
+        }}
+      >
+        <div
+          className="absolute -top-8 -right-8 h-24 w-24 rounded-full"
+          style={{ background: 'color-mix(in oklab, var(--primary) 30%, transparent)', filter: 'blur(18px)' }}
+        />
+        <div
+          className="absolute -bottom-10 -left-10 h-28 w-28 rounded-full"
+          style={{ background: 'color-mix(in oklab, var(--primary) 22%, transparent)', filter: 'blur(22px)' }}
+        />
+        <CheckTangLogo showLabel={false} className="text-primary relative" />
+      </div>
+      <div className="text-center space-y-2">
+        <h2 className="text-xl font-bold tracking-tight">Check Tang</h2>
+        <p className="text-sm text-muted-foreground">เช็คตังค์ทุกบาท ทุกกระเป๋า</p>
       </div>
       <div className="flex gap-3 text-3xl">💰 ✨ 📊</div>
     </div>,
