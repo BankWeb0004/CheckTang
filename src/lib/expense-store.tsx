@@ -786,20 +786,20 @@ export function ExpenseProvider({ children }: { children: ReactNode }) {
   }, [theme, darkMode, hydrated]);
 
   useEffect(() => {
-    if (hydrated) localStorage.setItem(LS.wallets, JSON.stringify(wallets));
+    if (hydrated) safeLocalSet(LS.wallets, JSON.stringify(wallets));
   }, [wallets, hydrated]);
 
   useEffect(() => {
-    if (hydrated) localStorage.setItem(LS.tx, JSON.stringify(transactions));
+    if (hydrated) safeLocalSet(LS.tx, JSON.stringify(transactions));
   }, [transactions, hydrated]);
 
   useEffect(() => {
     if (hydrated)
-      localStorage.setItem(LS.customCats, JSON.stringify(customCategories));
+      safeLocalSet(LS.customCats, JSON.stringify(customCategories));
   }, [customCategories, hydrated]);
 
   useEffect(() => {
-    if (hydrated) localStorage.setItem(LS.wallpapers, JSON.stringify(wallpapers));
+    if (hydrated) void idbSaveWallpapers(wallpapers);
   }, [wallpapers, hydrated]);
 
   /* -------- DERIVED -------- */
