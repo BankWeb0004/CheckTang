@@ -744,6 +744,40 @@ export function Settings() {
           </div>
         )}
       </section>
+ {/* ================= DANGER ZONE (RESET APP) ================= */}
+      <div className="pt-4 border-t border-destructive/20 mt-4">
+        <div className="flex flex-col gap-2 p-1">
+          <h3 className="text-xs font-semibold text-destructive">
+            {lang === "th" ? "พื้นที่อันตราย (Danger Zone)" : "Danger Zone"}
+          </h3>
+          <p className="text-[11px] text-muted-foreground leading-relaxed">
+            {lang === "th" 
+              ? "หากกดปุ่มนี้ ข้อมูลกระเป๋าตังค์ ธุรกรรม และยอดเงินทั้งหมดในแอปจะถูกลบหายไปทันทีและไม่สามารถกู้คืนได้" 
+              : "All wallets, transactions, and balances will be permanently deleted. This action cannot be undone."}
+          </p>
+          <Button 
+            variant="destructive" 
+            className="w-full h-10 rounded-xl text-sm mt-1"
+            onClick={() => {
+              const confirmMsg = lang === "th"
+                ? "คุณต้องการล้างข้อมูลทั้งหมดในแอปและรีเซ็ตเป็นศูนย์ใช่หรือไม่? ข้อมูลเก่าจะหายไปทั้งหมดครับ"
+                : "Are you sure you want to reset all app data? All your history will be permanently deleted.";
+                
+              if (window.confirm(confirmMsg)) {
+                localStorage.clear();
+                
+                toast.success(lang === "th" ? "รีเซ็ตข้อมูลแอปเป็นศูนย์เรียบร้อยแล้ว" : "App data reset successfully");
+                setTimeout(() => {
+                  window.location.reload();
+                }, 1000);
+              }
+            }}
+          >
+            <Trash2 className="w-4 h-4 mr-2" />
+            {lang === "th" ? "ล้างข้อมูลแอปทั้งหมดเป็นศูนย์" : "Reset All App Data"}
+          </Button>
+        </div>
+      </div>
       <SummaryExportModal
         open={showSummaryModal}
         onOpenChange={setShowSummaryModal}

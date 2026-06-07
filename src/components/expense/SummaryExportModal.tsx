@@ -27,8 +27,10 @@ import {
 } from "@/components/ui/select";
 import { toast } from "sonner";
 import { appConfig } from "@/lib/app-config";
-const Capacitor = (window as any).Capacitor;
 import { Download, Loader2 } from "lucide-react";
+
+// ดึงตัวแปรโกลบอลหน้าต่างของ Capacitor มาเตรียมไว้ใช้งานอย่างปลอดภัย
+const Capacitor = typeof window !== "undefined" ? (window as any).Capacitor : undefined;
 
 type PeriodKind = "this-month" | "pick-month" | "range" | "year" | "all";
 
@@ -403,44 +405,51 @@ export function SummaryExportModal({ open, onOpenChange }: Props) {
       const dataUrl = renderImage();
       const timestamp = new Date().toISOString().replace(/[:.]/g, "-").slice(0, -5);
       const filename = `checktang_summary_${timestamp}.png`;
-      const isNative =
-        typeof window !== "undefined" &&
-        ((window as unknown as { Capacitor?: { isNativePlatform?: () => boolean } })
-          .Capacitor?.isNativePlatform?.() ?? false);
+      
+      // เช็คการทำงานผ่านตัวแปรระดับบนของระบบ Capacitor โกลบอล
+      const isNative = typeof window !== "undefined" && !!Capacitor?.isNativePlatform?.();
 
       if (isNative) {
-        // Android WebView cannot share a JS File/Blob directly. Write to cache first,
-        // then pass the native file URI to Capacitor Share.
+        // ดึงปลั๊กอินอย่างปลอดภัยจากคอนเทนต์รันไทม์
         const Filesystem = Capacitor?.Plugins?.Filesystem;
         const Share = Capacitor?.Plugins?.Share;
-        const Directory = { Cache: 'CACHE', Documents: 'DOCUMENTS', Data: 'DATA', External: 'EXTERNAL', ExternalStorage: 'EXTERNAL_STORAGE' } as any;
+
+        if (!Filesystem || !Share) {
+          throw new Error("Capacitor Filesystem or Share plugin is not available natively.");
+        }
+
         const base64 = dataUrl.split(",")[1];
+        
+        // บันทึกไฟล์ลง Cache แบบไม่ใช้ Enum โมดูล เพื่อความปลอดภัยของคอมไพเลอร์
         await Filesystem.writeFile({
           path: filename,
           data: base64,
-          directory: Directory.Cache,
+          directory: 'CACHE',
           recursive: true,
         });
         const { uri } = await Filesystem.getUri({
-          path: filename,
-          directory: Directory.Cache,
+        path: filename,
+        directory: 'CACHE',
+      });
+
+      try {
+        await Share.share({
+          title: filename,
+          text: lang === "th" ? "สรุปยอดเงิน Check Tang" : "Check Tang summary",
+          files: [uri],
+          dialogTitle: lang === "th" ? "บันทึก/แชร์รูปภาพ" : "Save / share image",
         });
-        try {
-          await Share.share({
-            title: filename,
-            text: lang === "th" ? "สรุปยอดเงิน Check Tang" : "Check Tang summary",
-            files: [uri],
-            dialogTitle: lang === "th" ? "บันทึก/แชร์รูปภาพ" : "Save / share image",
-          });
-        } catch { /* user cancelled */ }
-        toast.success(
-          lang === "th"
-            ? "เปิดหน้าต่างแชร์รูปภาพแล้ว"
-            : "Image share sheet opened",
-          { duration: 5000 }
-        );
-      } else {
-        // Convert dataURL → Blob → File for Web Share API
+      } catch (e) { /* User Cancelled */ }
+
+      toast.success(
+        lang === "th" 
+          ? "เปิดหน้าต่างแชร์รูปภาพแล้ว" 
+          : "Image share sheet opened",
+        { duration: 5000 }
+      );
+
+    } else {
+        // ส่วนจัดการบนบราวเซอร์ปกติ (Web-based fallback)
         const res = await fetch(dataUrl);
         const blob = await res.blob();
         const file = new File([blob], filename, { type: "image/png" });
@@ -464,11 +473,9 @@ export function SummaryExportModal({ open, onOpenChange }: Props) {
               setIsExporting(false);
               return;
             }
-            // fall through to anchor fallback
           }
         }
 
-        // Fallback: anchor download for desktop browsers without Web Share
         const a = document.createElement("a");
         a.href = dataUrl;
         a.download = filename;
