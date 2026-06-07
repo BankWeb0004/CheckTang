@@ -7,6 +7,21 @@ import {
   ReactNode,
   useCallback,
 } from "react";
+import {
+  loadWallpapers as idbLoadWallpapers,
+  saveWallpapers as idbSaveWallpapers,
+  loadActiveWallpaper as idbLoadActive,
+  saveActiveWallpaper as idbSaveActive,
+} from "./idb-wallpapers";
+
+/** Safe localStorage write: never throws on QuotaExceededError. */
+function safeLocalSet(key: string, value: string) {
+  try {
+    localStorage.setItem(key, value);
+  } catch (err) {
+    console.warn("[localStorage] write failed for", key, err);
+  }
+}
 
 /* =======================================================================
  *  TYPES
@@ -628,19 +643,41 @@ export function ExpenseProvider({ children }: { children: ReactNode }) {
       const th = localStorage.getItem(LS.theme);
       if (th && THEME_PRESETS.some((p) => p.id === th)) setThemeState(th);
       const dm = localStorage.getItem(LS.darkMode);
-      const wp = localStorage.getItem(LS.wallpaper);
-      if (wp) setWallpaperState(wp);
-      const wps = localStorage.getItem(LS.wallpapers);
-      if (wps) {
+      // Wallpapers now live in IndexedDB. Migrate legacy localStorage values
+      // (et.wallpaper / et.wallpapers.v2) once, then remove them so the
+      // 5MB WebView quota is never hit again.
+      const legacyActive = localStorage.getItem(LS.wallpaper);
+      const legacyGallery = localStorage.getItem(LS.wallpapers);
+      (async () => {
         try {
-          const arr = JSON.parse(wps);
-          if (Array.isArray(arr)) setWallpapersState(arr.filter((s) => typeof s === "string").slice(0, 5));
-        } catch {}
-      } else if (wp) {
-        // seed gallery from previously single wallpaper
-        setWallpapersState([wp]);
-      }
-      if (wp) setWallpaperState(wp);
+          let gallery = await idbLoadWallpapers();
+          let active = await idbLoadActive();
+
+          if (gallery.length === 0 && legacyGallery) {
+            try {
+              const arr = JSON.parse(legacyGallery);
+              if (Array.isArray(arr)) {
+                gallery = arr.filter((s) => typeof s === "string").slice(0, 5);
+                await idbSaveWallpapers(gallery);
+              }
+            } catch {}
+          }
+          if (!active && legacyActive) {
+            active = legacyActive;
+            await idbSaveActive(active);
+          }
+          if (gallery.length === 0 && active) gallery = [active];
+
+          setWallpapersState(gallery);
+          setWallpaperState(active);
+        } catch (err) {
+          console.warn("[wallpapers] hydrate failed", err);
+        } finally {
+          // Free up localStorage so it never trips QuotaExceededError again.
+          try { localStorage.removeItem(LS.wallpaper); } catch {}
+          try { localStorage.removeItem(LS.wallpapers); } catch {}
+        }
+      })();
       const cur = localStorage.getItem(LS.currency) as CurrencyCode | null;
       if (cur && CURRENCIES.some((c) => c.code === cur)) setCurrencyState(cur);
       const cc = localStorage.getItem(LS.customCats);
@@ -731,7 +768,7 @@ export function ExpenseProvider({ children }: { children: ReactNode }) {
                 };
               });
             }
-            localStorage.setItem(LS.migrated, "true");
+            safeLocalSet(LS.migrated, "true");
           } catch {}
         }
       }
@@ -749,20 +786,20 @@ export function ExpenseProvider({ children }: { children: ReactNode }) {
   }, [theme, darkMode, hydrated]);
 
   useEffect(() => {
-    if (hydrated) localStorage.setItem(LS.wallets, JSON.stringify(wallets));
+    if (hydrated) safeLocalSet(LS.wallets, JSON.stringify(wallets));
   }, [wallets, hydrated]);
 
   useEffect(() => {
-    if (hydrated) localStorage.setItem(LS.tx, JSON.stringify(transactions));
+    if (hydrated) safeLocalSet(LS.tx, JSON.stringify(transactions));
   }, [transactions, hydrated]);
 
   useEffect(() => {
     if (hydrated)
-      localStorage.setItem(LS.customCats, JSON.stringify(customCategories));
+      safeLocalSet(LS.customCats, JSON.stringify(customCategories));
   }, [customCategories, hydrated]);
 
   useEffect(() => {
-    if (hydrated) localStorage.setItem(LS.wallpapers, JSON.stringify(wallpapers));
+    if (hydrated) void idbSaveWallpapers(wallpapers);
   }, [wallpapers, hydrated]);
 
   /* -------- DERIVED -------- */
@@ -959,20 +996,19 @@ export function ExpenseProvider({ children }: { children: ReactNode }) {
   /* -------- PREFS -------- */
   const setTheme = (id: string) => {
     setThemeState(id);
-    localStorage.setItem(LS.theme, id);
+    safeLocalSet(LS.theme, id);
   };
   const setDarkMode = (v: boolean) => {
     setDarkModeState(v);
-    localStorage.setItem(LS.darkMode, String(v));
+    safeLocalSet(LS.darkMode, String(v));
   };
   const setLang = (l: Lang) => {
     setLangState(l);
-    localStorage.setItem(LS.lang, l);
+    safeLocalSet(LS.lang, l);
   };
   const setWallpaper = (w: string | null) => {
     setWallpaperState(w);
-    if (w) localStorage.setItem(LS.wallpaper, w);
-    else localStorage.removeItem(LS.wallpaper);
+    void idbSaveActive(w);
   };
   const addWallpaper = (dataUrl: string) => {
     setWallpapersState((prev) => {
@@ -1000,7 +1036,7 @@ export function ExpenseProvider({ children }: { children: ReactNode }) {
   };
   const setCurrency = (c: CurrencyCode) => {
     setCurrencyState(c);
-    localStorage.setItem(LS.currency, c);
+    safeLocalSet(LS.currency, c);
   };
 
   const getCategoriesFor = useCallback(
@@ -1079,7 +1115,7 @@ export function ExpenseProvider({ children }: { children: ReactNode }) {
 
   const setHasSeenTutorial = (v: boolean) => {
     setHasSeenTutorialState(v);
-    localStorage.setItem(LS.tutorial, String(v));
+    safeLocalSet(LS.tutorial, String(v));
   };
   const openTutorial = () => setShowTutorial(true);
   const closeTutorial = (markSeen = true) => {
