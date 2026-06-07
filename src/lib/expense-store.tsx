@@ -7,6 +7,21 @@ import {
   ReactNode,
   useCallback,
 } from "react";
+import {
+  loadWallpapers as idbLoadWallpapers,
+  saveWallpapers as idbSaveWallpapers,
+  loadActiveWallpaper as idbLoadActive,
+  saveActiveWallpaper as idbSaveActive,
+} from "./idb-wallpapers";
+
+/** Safe localStorage write: never throws on QuotaExceededError. */
+function safeLocalSet(key: string, value: string) {
+  try {
+    localStorage.setItem(key, value);
+  } catch (err) {
+    console.warn("[localStorage] write failed for", key, err);
+  }
+}
 
 /* =======================================================================
  *  TYPES
