@@ -27,6 +27,7 @@ import {
 } from "@/components/ui/select";
 import { toast } from "sonner";
 import { appConfig } from "@/lib/app-config";
+const Capacitor = (window as any).Capacitor;
 import { Download, Loader2 } from "lucide-react";
 
 type PeriodKind = "this-month" | "pick-month" | "range" | "year" | "all";
@@ -410,8 +411,9 @@ export function SummaryExportModal({ open, onOpenChange }: Props) {
       if (isNative) {
         // Android WebView cannot share a JS File/Blob directly. Write to cache first,
         // then pass the native file URI to Capacitor Share.
-        const { Filesystem, Directory } = await import("@capacitor/filesystem");
-        const { Share } = await import("@capacitor/share");
+        const Filesystem = Capacitor?.Plugins?.Filesystem;
+        const Share = Capacitor?.Plugins?.Share;
+        const Directory = { Cache: 'CACHE', Documents: 'DOCUMENTS', Data: 'DATA', External: 'EXTERNAL', ExternalStorage: 'EXTERNAL_STORAGE' } as any;
         const base64 = dataUrl.split(",")[1];
         await Filesystem.writeFile({
           path: filename,

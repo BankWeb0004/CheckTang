@@ -18,6 +18,7 @@ import {
 } from "@/components/ui/select";
 import { Check, Upload, X, Sun, Moon, BookOpen, Trash2, Plus, Download, Image as ImageIcon } from "lucide-react";
 import { toast } from "sonner";
+const Capacitor = (window as any).Capacitor;
 import { appConfig } from "@/lib/app-config";
 import { SummaryExportModal } from "@/components/expense/SummaryExportModal";
 
@@ -209,28 +210,31 @@ export function Settings() {
       const filename = `checktang_backup_${timestamp}.json`;
 
       // Detect native (Capacitor) runtime
-      const isNative =
-        typeof window !== "undefined" &&
-        ((window as any).Capacitor?.isNativePlatform?.() ?? false);
+      const isNative = Capacitor.isNativePlatform?.() ?? false;
 
       if (isNative) {
         // Android WebView cannot resolve browser downloads or Web Share File objects reliably.
-        // Bundle Capacitor plugins (no vite-ignore), write a temporary cache file, then share its native URI.
+        // Use the Capacitor runtime plugin objects directly, so the bundler does not leave unresolved plugin imports.
         try {
-          const { Filesystem, Directory, Encoding } = await import("@capacitor/filesystem");
-          const { Share } = await import("@capacitor/share");
+          const capacitorAny = Capacitor as any;
+          const Filesystem = capacitorAny.Plugins?.Filesystem;
+          const Share = capacitorAny.Plugins?.Share;
+
+          if (!Filesystem || !Share) {
+            throw new Error("Capacitor Filesystem or Share plugin not available");
+          }
 
           await Filesystem.writeFile({
             path: filename,
             data: json,
-            directory: Directory.Cache,
-            encoding: Encoding.UTF8,
+            directory: "CACHE",
+            encoding: "utf8",
             recursive: true,
           });
 
           const { uri } = await Filesystem.getUri({
             path: filename,
-            directory: Directory.Cache,
+            directory: "CACHE",
           });
 
           try {
