@@ -996,20 +996,19 @@ export function ExpenseProvider({ children }: { children: ReactNode }) {
   /* -------- PREFS -------- */
   const setTheme = (id: string) => {
     setThemeState(id);
-    localStorage.setItem(LS.theme, id);
+    safeLocalSet(LS.theme, id);
   };
   const setDarkMode = (v: boolean) => {
     setDarkModeState(v);
-    localStorage.setItem(LS.darkMode, String(v));
+    safeLocalSet(LS.darkMode, String(v));
   };
   const setLang = (l: Lang) => {
     setLangState(l);
-    localStorage.setItem(LS.lang, l);
+    safeLocalSet(LS.lang, l);
   };
   const setWallpaper = (w: string | null) => {
     setWallpaperState(w);
-    if (w) localStorage.setItem(LS.wallpaper, w);
-    else localStorage.removeItem(LS.wallpaper);
+    void idbSaveActive(w);
   };
   const addWallpaper = (dataUrl: string) => {
     setWallpapersState((prev) => {
@@ -1037,7 +1036,7 @@ export function ExpenseProvider({ children }: { children: ReactNode }) {
   };
   const setCurrency = (c: CurrencyCode) => {
     setCurrencyState(c);
-    localStorage.setItem(LS.currency, c);
+    safeLocalSet(LS.currency, c);
   };
 
   const getCategoriesFor = useCallback(
