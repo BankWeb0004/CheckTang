@@ -432,6 +432,35 @@ export function SummaryExportModal({ open, onOpenChange }: Props) {
           { duration: 5000 }
         );
       } else {
+        // Convert dataURL → Blob → File for Web Share API
+        const res = await fetch(dataUrl);
+        const blob = await res.blob();
+        const file = new File([blob], filename, { type: "image/png" });
+
+        const navAny = navigator as Navigator & {
+          canShare?: (data: { files?: File[] }) => boolean;
+          share?: (data: { files?: File[]; title?: string; text?: string }) => Promise<void>;
+        };
+        if (navAny.share && navAny.canShare?.({ files: [file] })) {
+          try {
+            await navAny.share({
+              files: [file],
+              title: filename,
+              text: lang === "th" ? "สรุปยอดเงิน Check Tang" : "Check Tang summary",
+            });
+            toast.success(lang === "th" ? "บันทึกรูปภาพแล้ว" : "Image saved");
+            onOpenChange(false);
+            return;
+          } catch (err) {
+            if ((err as Error)?.name === "AbortError") {
+              setIsExporting(false);
+              return;
+            }
+            // fall through to anchor fallback
+          }
+        }
+
+        // Fallback: anchor download for desktop browsers without Web Share
         const a = document.createElement("a");
         a.href = dataUrl;
         a.download = filename;
@@ -440,6 +469,7 @@ export function SummaryExportModal({ open, onOpenChange }: Props) {
         document.body.removeChild(a);
         toast.success(lang === "th" ? "บันทึกรูปภาพแล้ว" : "Image saved");
       }
+
       onOpenChange(false);
     } catch (error) {
       console.error("Image export error:", error);
