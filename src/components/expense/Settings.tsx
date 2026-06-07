@@ -255,6 +255,29 @@ export function Settings() {
         }
       } else {
         const blob = new Blob([json], { type: "application/json" });
+        const file = new File([blob], filename, { type: "application/json" });
+
+        // Prefer Web Share API (works in Android WebView when bridged + modern browsers)
+        const navAny = navigator as Navigator & {
+          canShare?: (data: { files?: File[] }) => boolean;
+          share?: (data: { files?: File[]; title?: string; text?: string }) => Promise<void>;
+        };
+        if (navAny.share && navAny.canShare?.({ files: [file] })) {
+          try {
+            await navAny.share({
+              files: [file],
+              title: filename,
+              text: lang === "th" ? "ไฟล์สำรองข้อมูล Check Tang" : "Check Tang backup file",
+            });
+            toast.success(lang === "th" ? "สำรองข้อมูลสำเร็จ" : "Data exported successfully");
+            return;
+          } catch (err) {
+            // User cancelled or share failed — fall through to anchor download
+            if ((err as Error)?.name === "AbortError") return;
+          }
+        }
+
+        // Fallback: anchor download for desktop browsers without Web Share
         const url = URL.createObjectURL(blob);
         const a = document.createElement("a");
         a.href = url;
@@ -266,6 +289,7 @@ export function Settings() {
 
         toast.success(lang === "th" ? "สำรองข้อมูลสำเร็จ" : "Data exported successfully");
       }
+
     } catch (error) {
       console.error("Export error:", error);
       toast.error(lang === "th" ? "สำรองข้อมูลล้มเหลว" : "Export failed");
