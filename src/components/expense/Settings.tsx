@@ -214,34 +214,40 @@ export function Settings() {
         ((window as any).Capacitor?.isNativePlatform?.() ?? false);
 
       if (isNative) {
-        // Save to app Documents directory and open share dialog so user can pick destination
+        // Android WebView cannot resolve browser downloads or Web Share File objects reliably.
+        // Bundle Capacitor plugins (no vite-ignore), write a temporary cache file, then share its native URI.
         try {
-          const { Filesystem, Directory, Encoding } = await import(/* @vite-ignore */ "@capacitor/filesystem");
-          const { Share } = await import(/* @vite-ignore */ "@capacitor/share");
+          const { Filesystem, Directory, Encoding } = await import("@capacitor/filesystem");
+          const { Share } = await import("@capacitor/share");
 
-          const writeResult = await Filesystem.writeFile({
+          await Filesystem.writeFile({
             path: filename,
             data: json,
-            directory: Directory.Documents,
+            directory: Directory.Cache,
             encoding: Encoding.UTF8,
             recursive: true,
+          });
+
+          const { uri } = await Filesystem.getUri({
+            path: filename,
+            directory: Directory.Cache,
           });
 
           try {
             await Share.share({
               title: filename,
               text: lang === "th" ? "ไฟล์สำรองข้อมูล Check Tang" : "Check Tang backup file",
-              url: writeResult.uri,
+              files: [uri],
               dialogTitle: lang === "th" ? "บันทึกไฟล์สำรองข้อมูล" : "Save backup file",
             });
           } catch {
-            // user cancelled share — file is still saved
+            // user cancelled share
           }
 
           toast.success(
             lang === "th"
-              ? `บันทึกไว้ที่ Documents/${filename}`
-              : `Saved to Documents/${filename}`,
+              ? "เปิดหน้าต่างแชร์ไฟล์สำรองข้อมูลแล้ว"
+              : "Backup share sheet opened",
             { duration: 5000 }
           );
         } catch (error) {

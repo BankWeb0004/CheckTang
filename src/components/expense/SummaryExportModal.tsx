@@ -408,27 +408,33 @@ export function SummaryExportModal({ open, onOpenChange }: Props) {
           .Capacitor?.isNativePlatform?.() ?? false);
 
       if (isNative) {
-        const { Filesystem, Directory } = await import(/* @vite-ignore */ "@capacitor/filesystem");
-        const { Share } = await import(/* @vite-ignore */ "@capacitor/share");
+        // Android WebView cannot share a JS File/Blob directly. Write to cache first,
+        // then pass the native file URI to Capacitor Share.
+        const { Filesystem, Directory } = await import("@capacitor/filesystem");
+        const { Share } = await import("@capacitor/share");
         const base64 = dataUrl.split(",")[1];
-        const writeResult = await Filesystem.writeFile({
+        await Filesystem.writeFile({
           path: filename,
           data: base64,
-          directory: Directory.Documents,
+          directory: Directory.Cache,
           recursive: true,
+        });
+        const { uri } = await Filesystem.getUri({
+          path: filename,
+          directory: Directory.Cache,
         });
         try {
           await Share.share({
             title: filename,
             text: lang === "th" ? "สรุปยอดเงิน Check Tang" : "Check Tang summary",
-            url: writeResult.uri,
+            files: [uri],
             dialogTitle: lang === "th" ? "บันทึก/แชร์รูปภาพ" : "Save / share image",
           });
         } catch { /* user cancelled */ }
         toast.success(
           lang === "th"
-            ? `บันทึกรูปไว้ที่ Documents/${filename}`
-            : `Saved to Documents/${filename}`,
+            ? "เปิดหน้าต่างแชร์รูปภาพแล้ว"
+            : "Image share sheet opened",
           { duration: 5000 }
         );
       } else {
