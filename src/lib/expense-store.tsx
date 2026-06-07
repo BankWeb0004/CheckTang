@@ -768,7 +768,7 @@ export function ExpenseProvider({ children }: { children: ReactNode }) {
                 };
               });
             }
-            localStorage.setItem(LS.migrated, "true");
+            safeLocalSet(LS.migrated, "true");
           } catch {}
         }
       }
@@ -1115,7 +1115,7 @@ export function ExpenseProvider({ children }: { children: ReactNode }) {
 
   const setHasSeenTutorial = (v: boolean) => {
     setHasSeenTutorialState(v);
-    localStorage.setItem(LS.tutorial, String(v));
+    safeLocalSet(LS.tutorial, String(v));
   };
   const openTutorial = () => setShowTutorial(true);
   const closeTutorial = (markSeen = true) => {
