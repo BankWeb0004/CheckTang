@@ -643,19 +643,41 @@ export function ExpenseProvider({ children }: { children: ReactNode }) {
       const th = localStorage.getItem(LS.theme);
       if (th && THEME_PRESETS.some((p) => p.id === th)) setThemeState(th);
       const dm = localStorage.getItem(LS.darkMode);
-      const wp = localStorage.getItem(LS.wallpaper);
-      if (wp) setWallpaperState(wp);
-      const wps = localStorage.getItem(LS.wallpapers);
-      if (wps) {
+      // Wallpapers now live in IndexedDB. Migrate legacy localStorage values
+      // (et.wallpaper / et.wallpapers.v2) once, then remove them so the
+      // 5MB WebView quota is never hit again.
+      const legacyActive = localStorage.getItem(LS.wallpaper);
+      const legacyGallery = localStorage.getItem(LS.wallpapers);
+      (async () => {
         try {
-          const arr = JSON.parse(wps);
-          if (Array.isArray(arr)) setWallpapersState(arr.filter((s) => typeof s === "string").slice(0, 5));
-        } catch {}
-      } else if (wp) {
-        // seed gallery from previously single wallpaper
-        setWallpapersState([wp]);
-      }
-      if (wp) setWallpaperState(wp);
+          let gallery = await idbLoadWallpapers();
+          let active = await idbLoadActive();
+
+          if (gallery.length === 0 && legacyGallery) {
+            try {
+              const arr = JSON.parse(legacyGallery);
+              if (Array.isArray(arr)) {
+                gallery = arr.filter((s) => typeof s === "string").slice(0, 5);
+                await idbSaveWallpapers(gallery);
+              }
+            } catch {}
+          }
+          if (!active && legacyActive) {
+            active = legacyActive;
+            await idbSaveActive(active);
+          }
+          if (gallery.length === 0 && active) gallery = [active];
+
+          setWallpapersState(gallery);
+          setWallpaperState(active);
+        } catch (err) {
+          console.warn("[wallpapers] hydrate failed", err);
+        } finally {
+          // Free up localStorage so it never trips QuotaExceededError again.
+          try { localStorage.removeItem(LS.wallpaper); } catch {}
+          try { localStorage.removeItem(LS.wallpapers); } catch {}
+        }
+      })();
       const cur = localStorage.getItem(LS.currency) as CurrencyCode | null;
       if (cur && CURRENCIES.some((c) => c.code === cur)) setCurrencyState(cur);
       const cc = localStorage.getItem(LS.customCats);
